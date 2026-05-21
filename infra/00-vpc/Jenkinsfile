@@ -1,0 +1,82 @@
+pipeline {
+    // These are pre-build sections
+    agent {
+        node {
+            label 'AGENT-1'
+        }
+    }
+    environment {
+        COURSE = "Jenkins"
+    }
+    options {
+        timeout(time: 60, unit: 'MINUTES') 
+        disableConcurrentBuilds()
+        ansiColor('xterm')
+    }
+    
+    stages {
+        stage('Init') {
+            steps {
+                script{
+                    withAWS(region:'us-east-1',credentials:'aws-creds') {
+                        sh """
+                            cd infra/00-vpc
+                            terraform init
+                        """
+                    }
+                }
+            }
+        }
+        stage('Plan') {
+            steps {
+                script{
+                    withAWS(region:'us-east-1',credentials:'aws-creds') {
+                        sh """
+                            cd infra/00-vpc
+                            terraform plan
+                        """
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+
+
+            steps {
+                script{
+                    withAWS(region:'us-east-1',credentials:'aws-creds') {
+                        sh """
+                            cd infra/00-vpc
+                            terraform apply -auto-approve
+                            
+                        """
+                    }
+                }
+            }
+        }
+        stage('Trigger SG') {
+            steps {
+                script {
+                    build job: '10-sg',
+                        wait: false, // Wait for completion
+                        propagate: false // Propagate status
+                }
+            }
+        }
+    }
+    post{
+        always{
+            echo 'I will always say Hello again!'
+            cleanWs()
+        }
+        success {
+            echo 'I will run if success'
+        }
+        failure {
+            echo 'I will run if failure'
+        }
+        aborted {
+            echo 'pipeline is aborted'
+        }
+    }
+}
