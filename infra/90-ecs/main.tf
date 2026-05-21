@@ -1,1403 +1,1500 @@
-###############ECS CLUSTER ###############
+# ###############ECS CLUSTER ###############
 
 
-resource "aws_ecs_cluster" "main" {
+# resource "aws_ecs_cluster" "main" {
 
-  name = "${local.common_name_suffix}-cluster"
+#   name = "${local.common_name_suffix}-cluster"
 
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
+#   setting {
+#     name  = "containerInsights"
+#     value = "enabled"
+#   }
 
-  configuration {
+#   configuration {
 
-    execute_command_configuration {
+#     execute_command_configuration {
 
-      logging = "OVERRIDE"
+#       logging = "OVERRIDE"
 
-      log_configuration {
+#       log_configuration {
 
-        cloud_watch_log_group_name = aws_cloudwatch_log_group.ecs_exec.name
-      }
-    }
-  }
+#         cloud_watch_log_group_name = aws_cloudwatch_log_group.ecs_exec.name
+#       }
+#     }
+#   }
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${local.common_name_suffix}-cluster"
-    }
-  )
-}
+#   tags = merge(
+#     local.common_tags,
+#     {
+#       Name = "${local.common_name_suffix}-cluster"
+#     }
+#   )
+# }
 
-############## CLoudwatch Log Groups ###############
-resource "aws_cloudwatch_log_group" "ecs_exec" {
+# ############## CLoudwatch Log Groups ###############
+# resource "aws_cloudwatch_log_group" "ecs_exec" {
 
-  name = "/ecs/${local.common_name_suffix}/ecs-exec"
+#   name = "/ecs/${local.common_name_suffix}/ecs-exec"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "frontend" {
+# resource "aws_cloudwatch_log_group" "frontend" {
 
-  name = "/ecs/${local.common_name_suffix}/frontend"
+#   name = "/ecs/${local.common_name_suffix}/frontend"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "catalogue" {
+# resource "aws_cloudwatch_log_group" "catalogue" {
 
-  name = "/ecs/${local.common_name_suffix}/catalogue"
+#   name = "/ecs/${local.common_name_suffix}/catalogue"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "user" {
+# resource "aws_cloudwatch_log_group" "user" {
 
-  name = "/ecs/${local.common_name_suffix}/user"
+#   name = "/ecs/${local.common_name_suffix}/user"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "cart" {
+# resource "aws_cloudwatch_log_group" "cart" {
 
-  name = "/ecs/${local.common_name_suffix}/cart"
+#   name = "/ecs/${local.common_name_suffix}/cart"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "shipping" {
+# resource "aws_cloudwatch_log_group" "shipping" {
 
-  name = "/ecs/${local.common_name_suffix}/shipping"
+#   name = "/ecs/${local.common_name_suffix}/shipping"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "payment" {
+# resource "aws_cloudwatch_log_group" "payment" {
 
-  name = "/ecs/${local.common_name_suffix}/payment"
+#   name = "/ecs/${local.common_name_suffix}/payment"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "mongodb" {
+# resource "aws_cloudwatch_log_group" "mongodb" {
 
-  name = "/ecs/${local.common_name_suffix}/mongodb"
+#   name = "/ecs/${local.common_name_suffix}/mongodb"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "redis" {
+# resource "aws_cloudwatch_log_group" "redis" {
 
-  name = "/ecs/${local.common_name_suffix}/redis"
+#   name = "/ecs/${local.common_name_suffix}/redis"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "mysql" {
+# resource "aws_cloudwatch_log_group" "mysql" {
 
-  name = "/ecs/${local.common_name_suffix}/mysql"
+#   name = "/ecs/${local.common_name_suffix}/mysql"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
-resource "aws_cloudwatch_log_group" "rabbitmq" {
+# resource "aws_cloudwatch_log_group" "rabbitmq" {
 
-  name = "/ecs/${local.common_name_suffix}/rabbitmq"
+#   name = "/ecs/${local.common_name_suffix}/rabbitmq"
 
-  retention_in_days = 7
-}
+#   retention_in_days = 7
+# }
 
 
-############## Services namespace ###############
-resource "aws_service_discovery_private_dns_namespace" "main" {
+# ############## Services namespace ###############
+# resource "aws_service_discovery_private_dns_namespace" "main" {
 
-  name = "internal"
+#   name = "internal"
 
-  vpc  = local.vpc_id
+#   vpc  = local.vpc_id
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${local.common_name_suffix}-internal"
-    }
-  )
-}
-############# Service Discovery Services- Cloud map ###############
-resource "aws_service_discovery_service" "services" {
+#   tags = merge(
+#     local.common_tags,
+#     {
+#       Name = "${local.common_name_suffix}-internal"
+#     }
+#   )
+# }
+# ############# Service Discovery Services- Cloud map ###############
+# resource "aws_service_discovery_service" "services" {
 
-  for_each = toset(local.cloudmap_services)
+#   for_each = toset(local.cloudmap_services)
 
-  name = each.key
+#   name = each.key
 
-  dns_config {
+#   dns_config {
 
-    namespace_id = aws_service_discovery_private_dns_namespace.main.id
+#     namespace_id = aws_service_discovery_private_dns_namespace.main.id
 
-    routing_policy = "MULTIVALUE"
+#     routing_policy = "MULTIVALUE"
 
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
-  }
+#     dns_records {
+#       ttl  = 10
+#       type = "A"
+#     }
+#   }
 
-  health_check_custom_config {
-    failure_threshold = 1
-  }
-}
+#   health_check_custom_config {
+#     failure_threshold = 1
+#   }
+# }
 
-################# IAM Role for ECS Task execution ###############
+# ################# IAM Role for ECS Task execution ###############
 
 
-resource "aws_iam_role" "ecs_task_execution_role" {
+# resource "aws_iam_role" "ecs_task_execution_role" {
 
-  name = "${local.common_name_suffix}-ecs-execution-role"
+#   name = "${local.common_name_suffix}-ecs-execution-role"
 
-  assume_role_policy = jsonencode({
+#   assume_role_policy = jsonencode({
 
-    Version = "2012-10-17"
+#     Version = "2012-10-17"
 
-    Statement = [
-      {
-        Effect = "Allow"
+#     Statement = [
+#       {
+#         Effect = "Allow"
 
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
+#         Principal = {
+#           Service = "ecs-tasks.amazonaws.com"
+#         }
 
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-}
+#         Action = "sts:AssumeRole"
+#       }
+#     ]
+#   })
+# }
 
-resource "aws_iam_role_policy_attachment" "ecs_execution_role" {
+# resource "aws_iam_role_policy_attachment" "ecs_execution_role" {
 
-  role = aws_iam_role.ecs_task_execution_role.name
+#   role = aws_iam_role.ecs_task_execution_role.name
 
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+# }
 
 
-################## Task Role for ECS Tasks ###############
+# ################## Task Role for ECS Tasks ###############
 
-resource "aws_iam_role" "ecs_task_role" {
+# resource "aws_iam_role" "ecs_task_role" {
 
-  name = "${local.common_name_suffix}-ecs-task-role"
+#   name = "${local.common_name_suffix}-ecs-task-role"
 
-  assume_role_policy = jsonencode({
+#   assume_role_policy = jsonencode({
 
-    Version = "2012-10-17"
+#     Version = "2012-10-17"
 
-    Statement = [
-      {
-        Effect = "Allow"
+#     Statement = [
+#       {
+#         Effect = "Allow"
 
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
+#         Principal = {
+#           Service = "ecs-tasks.amazonaws.com"
+#         }
 
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
+#         Action = "sts:AssumeRole"
+#       }
+#     ]
+#   })
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${local.common_name_suffix}-ecs-task-role"
-    }
-  )
-}
+#   tags = merge(
+#     local.common_tags,
+#     {
+#       Name = "${local.common_name_suffix}-ecs-task-role"
+#     }
+#   )
+# }
 
-resource "aws_iam_role_policy" "ecs_task_policy" {
+# resource "aws_iam_role_policy" "ecs_task_policy" {
 
-  name = "${local.common_name_suffix}-ecs-task-policy"
+#   name = "${local.common_name_suffix}-ecs-task-policy"
 
-  role = aws_iam_role.ecs_task_role.id
+#   role = aws_iam_role.ecs_task_execution_role.id
 
-  policy = jsonencode({
+#   policy = jsonencode({
 
-    Version = "2012-10-17"
+#     Version = "2012-10-17"
 
-    Statement = [
+#     Statement = [
 
-      {
-        Effect = "Allow"
+#       {
+#         Effect = "Allow"
 
-        Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters",
-          "ssm:GetParametersByPath"
-        ]
+#         Action = [
+#           "ssm:GetParameter",
+#           "ssm:GetParameters",
+#           "ssm:GetParametersByPath"
+#         ]
 
-        Resource = "*"
-      }
-    ]
-  })
-}
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
 
-################# IAM Policy for ECS Exec ###############
-resource "aws_iam_role_policy" "ecs_exec" {
+# ################# IAM Policy for ECS Exec ###############
+# resource "aws_iam_role_policy" "ecs_exec" {
 
-  name = "${local.common_name_suffix}-ecs-exec"
+#   name = "${local.common_name_suffix}-ecs-exec"
 
-  role = aws_iam_role.ecs_task_execution_role.id
+#   role = aws_iam_role.ecs_task_execution_role.id
 
-  policy = jsonencode({
+#   policy = jsonencode({
 
-    Version = "2012-10-17"
+#     Version = "2012-10-17"
 
-    Statement = [
-      {
-        Effect = "Allow"
+#     Statement = [
+#       {
+#         Effect = "Allow"
 
-        Action = [
-          "ssmmessages:CreateControlChannel",
-          "ssmmessages:CreateDataChannel",
-          "ssmmessages:OpenControlChannel",
-          "ssmmessages:OpenDataChannel"
-        ]
+#         Action = [
+#           "ssmmessages:CreateControlChannel",
+#           "ssmmessages:CreateDataChannel",
+#           "ssmmessages:OpenControlChannel",
+#           "ssmmessages:OpenDataChannel"
+#         ]
 
-        Resource = "*"
-      }
-    ]
-  })
-}
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
 
-################### frontend setup #############
+# ################### frontend setup #############
 
-resource "aws_ecs_task_definition" "frontend" {
+# resource "aws_ecs_task_definition" "frontend" {
 
-  family = "${local.common_name_suffix}-frontend"
+#   family = "${local.common_name_suffix}-frontend"
 
-  network_mode = "awsvpc"
+#   network_mode = "awsvpc"
 
-  requires_compatibilities = ["FARGATE"]
+#   requires_compatibilities = ["FARGATE"]
 
-  cpu    = 512
-  memory = 1024
+#   cpu    = 512
+#   memory = 1024
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
 
 
-  container_definitions = jsonencode([
+#   container_definitions = jsonencode([
 
-    {
-      name  = "frontend"
+#     {
+#       name  = "frontend"
 
-      image = var.frontend_image
+#       image = var.frontend_image
 
-      essential = true
+#       essential = true
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+#       portMappings = [
+#         {
+#           containerPort = 80
+#           hostPort      = 80
+#           protocol      = "tcp"
+#         }
+#       ]
 
-      logConfiguration = {
+#       logConfiguration = {
 
-        logDriver = "awslogs"
+#         logDriver = "awslogs"
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.frontend.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.frontend.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-resource "aws_ecs_service" "frontend" {
+# resource "aws_ecs_service" "frontend" {
 
-  name = "${local.common_name_suffix}-frontend"
+#   name = "${local.common_name_suffix}-frontend"
 
-  cluster = aws_ecs_cluster.main.id
+#   cluster = aws_ecs_cluster.main.id
 
-  task_definition = aws_ecs_task_definition.frontend.arn
+#   task_definition = aws_ecs_task_definition.frontend.arn
 
-  desired_count = 2
+#   desired_count = 2
 
-  launch_type = "FARGATE"
+#   launch_type = "FARGATE"
 
-  enable_execute_command = true
+#   enable_execute_command = true
 
-  network_configuration {
+#   network_configuration {
 
-    subnets = local.private_subnet_ids
+#     subnets = local.private_subnet_ids
 
-    security_groups = [
-      local.frontend_sg_id
-    ]
+#     security_groups = [
+#       local.frontend_sg_id
+#     ]
 
-    assign_public_ip = false
-  }
+#     assign_public_ip = false
+#   }
 
-  load_balancer {
+#   load_balancer {
 
-    target_group_arn = aws_lb_target_group.frontend.arn
+#     target_group_arn = aws_lb_target_group.frontend.arn
 
-    container_name = "frontend"
+#     container_name = "frontend"
 
-    container_port = 8080
-  }
+#     container_port = 8080
+#   }
 
-  service_registries {
+#   service_registries {
 
-    registry_arn = aws_service_discovery_service.services["frontend"].arn
-  }
+#     registry_arn = aws_service_discovery_service.services["frontend"].arn
+#   }
 
-  depends_on = [
-    aws_lb_listener.frontend_alb
-  ]
-}
+#   depends_on = [
+#     aws_lb_listener.frontend_alb
+#   ]
+# }
 
 
-resource "aws_appautoscaling_target" "frontend" {
+# resource "aws_appautoscaling_target" "frontend" {
 
-  max_capacity = 10
+#   max_capacity = 10
 
-  min_capacity = 2
+#   min_capacity = 2
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.frontend.name}"
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.frontend.name}"
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-  service_namespace = "ecs"
-}
+#   service_namespace = "ecs"
+# }
 
 
-resource "aws_appautoscaling_policy" "frontend_cpu" {
+# resource "aws_appautoscaling_policy" "frontend_cpu" {
 
-  name = "${local.common_name_suffix}-frontend-cpu"
+#   name = "${local.common_name_suffix}-frontend-cpu"
 
-  policy_type = "TargetTrackingScaling"
+#   policy_type = "TargetTrackingScaling"
 
-  resource_id = aws_appautoscaling_target.frontend.resource_id
+#   resource_id = aws_appautoscaling_target.frontend.resource_id
 
-  scalable_dimension = aws_appautoscaling_target.frontend.scalable_dimension
+#   scalable_dimension = aws_appautoscaling_target.frontend.scalable_dimension
 
-  service_namespace = aws_appautoscaling_target.frontend.service_namespace
+#   service_namespace = aws_appautoscaling_target.frontend.service_namespace
 
-  target_tracking_scaling_policy_configuration {
+#   target_tracking_scaling_policy_configuration {
 
-    predefined_metric_specification {
+#     predefined_metric_specification {
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-    target_value = 70
-  }
-}
+#     target_value = 70
+#   }
+# }
 
-########### catalogue setup #############
+# ########### catalogue setup #############
 
-resource "aws_ecs_task_definition" "catalogue" {
+# resource "aws_ecs_task_definition" "catalogue" {
 
-  family = "${local.common_name_suffix}-catalogue"
+#   family = "${local.common_name_suffix}-catalogue"
 
-  network_mode = "awsvpc"
+#   network_mode = "awsvpc"
 
-  requires_compatibilities = ["FARGATE"]
+#   requires_compatibilities = ["FARGATE"]
 
-  cpu    = 512
-  memory = 1024
+#   cpu    = 512
+#   memory = 1024
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
 
-  container_definitions = jsonencode([
+#   container_definitions = jsonencode([
 
-    {
-      name  = "catalogue"
+#     {
+#       name  = "catalogue"
 
-      image = var.catalogue_image
+#       image = var.catalogue_image
 
-      essential = true
+#       essential = true
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+#       portMappings = [
+#         {
+#           containerPort = 8080
+#           hostPort      = 8080
+#           protocol      = "tcp"
+#         }
+#       ]
 
-      secrets = [
-        {
-          name      = MONGO_URL
-          valueFrom = aws_ssm_parameter.mongo_url.arn
-        }
-      ]
+#           environment = [
 
-      logConfiguration = {
+#             {
+#               name  = "CATALOGUE_PORT"
 
-        logDriver = "awslogs"
+#               value = "8080"
+#             }
+#           ]
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.catalogue.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
 
+#       secrets = [
 
-resource "aws_ecs_service" "catalogue" {
+#             {
+#               name      = "MONGO_URL"
+#               valueFrom = "/stackly/dev/mongodb-url"
+#             },
 
-  name = "${local.common_name_suffix}-catalogue"
+#             {
+#               name      = "CATALOGUE_HOST"
+#               valueFrom = "/stackly/dev/catalogue-host"
+#             }
+#       ]
+#       logConfiguration = {
 
-  cluster = aws_ecs_cluster.main.id
+#         logDriver = "awslogs"
 
-  task_definition = aws_ecs_task_definition.catalogue.arn
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.catalogue.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-  desired_count = 2
 
-  launch_type = "FARGATE"
+# resource "aws_ecs_service" "catalogue" {
 
-  enable_execute_command = true
+#   name = "${local.common_name_suffix}-catalogue"
 
-  health_check_grace_period_seconds = 60
+#   cluster = aws_ecs_cluster.main.id
 
-  network_configuration {
+#   task_definition = aws_ecs_task_definition.catalogue.arn
 
-    subnets = local.private_subnet_ids
+#   desired_count = 2
 
-    security_groups = [
-      local.catalogue_sg_id
-    ]
+#   launch_type = "FARGATE"
 
-    assign_public_ip = false
-  }
+#   enable_execute_command = true
 
-  service_registries {
+#   health_check_grace_period_seconds = 60
 
-    registry_arn = aws_service_discovery_service.services["catalogue"].arn
-  }
-}
+#   network_configuration {
 
+#     subnets = local.private_subnet_ids
 
-resource "aws_appautoscaling_target" "catalogue" {
+#     security_groups = [
+#       local.catalogue_sg_id
+#     ]
 
-  max_capacity = 10
+#     assign_public_ip = false
+#   }
 
-  min_capacity = 2
+#   service_registries {
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.catalogue.name}"
+#     registry_arn = aws_service_discovery_service.services["catalogue"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#   enable = true
 
-  service_namespace = "ecs"
-}
+#   rollback = true
+# }
+# }
 
 
-resource "aws_appautoscaling_policy" "catalogue_cpu" {
+# resource "aws_appautoscaling_target" "catalogue" {
 
-  name = "${local.common_name_suffix}-catalogue-cpu"
+#   max_capacity = 10
 
-  policy_type = "TargetTrackingScaling"
+#   min_capacity = 2
 
-  resource_id = aws_appautoscaling_target.catalogue.resource_id
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.catalogue.name}"
 
-  scalable_dimension = aws_appautoscaling_target.catalogue.scalable_dimension
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-  service_namespace = aws_appautoscaling_target.catalogue.service_namespace
+#   service_namespace = "ecs"
+# }
 
-  target_tracking_scaling_policy_configuration {
 
-    predefined_metric_specification {
+# resource "aws_appautoscaling_policy" "catalogue_cpu" {
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
+#   name = "${local.common_name_suffix}-catalogue-cpu"
 
-    target_value = 70
-  }
-}
+#   policy_type = "TargetTrackingScaling"
 
-############ user setup #############
+#   resource_id = aws_appautoscaling_target.catalogue.resource_id
 
-resource "aws_ecs_task_definition" "user" {
+#   scalable_dimension = aws_appautoscaling_target.catalogue.scalable_dimension
 
-  family = "${local.common_name_suffix}-user"
+#   service_namespace = aws_appautoscaling_target.catalogue.service_namespace
 
-  network_mode = "awsvpc"
+#   target_tracking_scaling_policy_configuration {
 
-  requires_compatibilities = ["FARGATE"]
+#     predefined_metric_specification {
 
-  cpu    = 512
-  memory = 1024
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#     target_value = 70
+#   }
+# }
 
-    {
-      name  = "user"
+# ############ user setup #############
 
-      image = var.user_image
+# resource "aws_ecs_task_definition" "user" {
 
-      essential = true
+#   family = "${local.common_name_suffix}-user"
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+#   network_mode = "awsvpc"
 
-      secrets = [
-        {
-          name      = "MONGO_URL"
-          valueFrom = aws_ssm_parameter.mongo_url.arn
-        }
-      ]
+#   requires_compatibilities = ["FARGATE"]
 
-      logConfiguration = {
+#   cpu    = 512
+#   memory = 1024
 
-        logDriver = "awslogs"
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.user.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#     {
+#       name  = "user"
 
-resource "aws_ecs_service" "user" {
+#       image = var.user_image
 
-  name = "${local.common_name_suffix}-user"
+#       essential = true
 
-  cluster = aws_ecs_cluster.main.id
+#       portMappings = [
+#         {
+#           containerPort = 8080
+#           hostPort      = 8080
+#           protocol      = "tcp"
+#         }
+#       ]
+#       environment = [
 
-  task_definition = aws_ecs_task_definition.user.arn
+#         {
+#           name  = "MONGO"
+#           value = "TRUE"
+#         }
+#       ]
 
-  desired_count = 2
+#       secrets = [
+#         {
+#           name      = "MONGO_URL"
+#           valueFrom = "/stackly/dev/mongodb-url"
+#         },
 
-  launch_type = "FARGATE"
+#         {
+#           name      = "REDIS_HOST"
+#           valueFrom = "/stackly/dev/redis-host"
+#         }
 
-  enable_execute_command = true
+#         ]
 
-  health_check_grace_period_seconds = 60
+#       logConfiguration = {
 
-  network_configuration {
+#         logDriver = "awslogs"
 
-    subnets = local.private_subnet_ids
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.user.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-    security_groups = [
-      local.user_sg_id
-    ]
+# resource "aws_ecs_service" "user" {
 
-    assign_public_ip = false
-  }
+#   name = "${local.common_name_suffix}-user"
 
-  service_registries {
+#   cluster = aws_ecs_cluster.main.id
 
-    registry_arn = aws_service_discovery_service.services["user"].arn
-  }
-}
+#   task_definition = aws_ecs_task_definition.user.arn
 
+#   desired_count = 2
 
-resource "aws_appautoscaling_target" "user" {
+#   launch_type = "FARGATE"
 
-  max_capacity = 10
+#   enable_execute_command = true
 
-  min_capacity = 2
+#   health_check_grace_period_seconds = 60
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.user.name}"
+#   network_configuration {
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#     subnets = local.private_subnet_ids
 
-  service_namespace = "ecs"
-}
+#     security_groups = [
+#       local.user_sg_id
+#     ]
 
+#     assign_public_ip = false
+#   }
 
-resource "aws_appautoscaling_policy" "user_cpu" {
+#   service_registries {
 
-  name = "${local.common_name_suffix}-user-cpu"
+#     registry_arn = aws_service_discovery_service.services["user"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  policy_type = "TargetTrackingScaling"
+#   enable = true
 
-  resource_id = aws_appautoscaling_target.user.resource_id
+#   rollback = true
+# }
+# }
 
-  scalable_dimension = aws_appautoscaling_target.user.scalable_dimension
 
-  service_namespace = aws_appautoscaling_target.user.service_namespace
+# resource "aws_appautoscaling_target" "user" {
 
-  target_tracking_scaling_policy_configuration {
+#   max_capacity = 10
 
-    predefined_metric_specification {
+#   min_capacity = 2
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.user.name}"
 
-    target_value = 70
-  }
-}
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-############ cart setup #############
+#   service_namespace = "ecs"
+# }
 
 
-resource "aws_ecs_task_definition" "cart" {
+# resource "aws_appautoscaling_policy" "user_cpu" {
 
-  family = "${local.common_name_suffix}-cart"
+#   name = "${local.common_name_suffix}-user-cpu"
 
-  network_mode = "awsvpc"
+#   policy_type = "TargetTrackingScaling"
 
-  requires_compatibilities = ["FARGATE"]
+#   resource_id = aws_appautoscaling_target.user.resource_id
 
-  cpu    = 512
-  memory = 1024
+#   scalable_dimension = aws_appautoscaling_target.user.scalable_dimension
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
+#   service_namespace = aws_appautoscaling_target.user.service_namespace
 
-  container_definitions = jsonencode([
+#   target_tracking_scaling_policy_configuration {
 
-    {
-      name  = "cart"
+#     predefined_metric_specification {
 
-      image = var.cart_image
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-      essential = true
+#     target_value = 70
+#   }
+# }
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+# ############ cart setup #############
 
-      secrets = [
-        {
-          name      = "REDIS_HOST"
-          valueFrom = aws_ssm_parameter.redis_url.arn
-        }
-      ]
 
-      logConfiguration = {
+# resource "aws_ecs_task_definition" "cart" {
 
-        logDriver = "awslogs"
+#   family = "${local.common_name_suffix}-cart"
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.cart.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#   network_mode = "awsvpc"
 
-resource "aws_ecs_service" "cart" {
+#   requires_compatibilities = ["FARGATE"]
 
-  name = "${local.common_name_suffix}-cart"
+#   cpu    = 512
+#   memory = 1024
 
-  cluster = aws_ecs_cluster.main.id
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
 
-  task_definition = aws_ecs_task_definition.cart.arn
+#   container_definitions = jsonencode([
 
-  desired_count = 2
+#     {
+#       name  = "cart"
 
-  launch_type = "FARGATE"
+#       image = var.cart_image
 
-  enable_execute_command = true
+#       essential = true
 
-  health_check_grace_period_seconds = 60
+#       portMappings = [
+#         {
+#           containerPort = 8080
+#           hostPort      = 8080
+#           protocol      = "tcp"
+#         }
+#       ]
+#       environment = [
 
-  network_configuration {
+#         {
+#           name = "CATALOGUE_PORT"
+#           value = "8080"
+#         }
+#       ]
 
-    subnets = local.private_subnet_ids
+#       secrets = [
+#         {
+#           name      = "REDIS_HOST"
+#           valueFrom = "/stackly/dev/redis-host"
+#         },
+#         { name      = "CATALOGUE_HOST"
+#           valueFrom = "/stackly/dev/catalogue-host"
+#          }
+#       ]
 
-    security_groups = [
-      local.cart_sg_id
-    ]
+#       logConfiguration = {
 
-    assign_public_ip = false
-  }
+#         logDriver = "awslogs"
 
-  service_registries {
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.cart.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-    registry_arn = aws_service_discovery_service.services["cart"].arn
-  }
-}
+# resource "aws_ecs_service" "cart" {
 
+#   name = "${local.common_name_suffix}-cart"
 
-resource "aws_appautoscaling_target" "cart" {
+#   cluster = aws_ecs_cluster.main.id
 
-  max_capacity = 10
+#   task_definition = aws_ecs_task_definition.cart.arn
 
-  min_capacity = 2
+#   desired_count = 2
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.cart.name}"
+#   launch_type = "FARGATE"
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#   enable_execute_command = true
 
-  service_namespace = "ecs"
-}
+#   health_check_grace_period_seconds = 60
 
+#   network_configuration {
 
-resource "aws_appautoscaling_policy" "cart_cpu" {
+#     subnets = local.private_subnet_ids
 
-  name = "${local.common_name_suffix}-cart-cpu"
+#     security_groups = [
+#       local.cart_sg_id
+#     ]
 
-  policy_type = "TargetTrackingScaling"
+#     assign_public_ip = false
+#   }
 
-  resource_id = aws_appautoscaling_target.cart.resource_id
+#   service_registries {
 
-  scalable_dimension = aws_appautoscaling_target.cart.scalable_dimension
+#     registry_arn = aws_service_discovery_service.services["cart"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  service_namespace = aws_appautoscaling_target.cart.service_namespace
+#   enable = true
 
-  target_tracking_scaling_policy_configuration {
+#   rollback = true
+# }
+# }
 
-    predefined_metric_specification {
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
+# resource "aws_appautoscaling_target" "cart" {
 
-    target_value = 70
-  }
-}
+#   max_capacity = 10
 
-############ shipping setup #############
+#   min_capacity = 2
 
-resource "aws_ecs_task_definition" "shipping" {
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.cart.name}"
 
-  family = "${local.common_name_suffix}-shipping"
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-  network_mode = "awsvpc"
+#   service_namespace = "ecs"
+# }
 
-  requires_compatibilities = ["FARGATE"]
 
-  cpu    = 512
-  memory = 1024
+# resource "aws_appautoscaling_policy" "cart_cpu" {
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#   name = "${local.common_name_suffix}-cart-cpu"
 
-    {
-      name  = "shipping"
+#   policy_type = "TargetTrackingScaling"
 
-      image = var.shipping_image
+#   resource_id = aws_appautoscaling_target.cart.resource_id
 
-      essential = true
+#   scalable_dimension = aws_appautoscaling_target.cart.scalable_dimension
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+#   service_namespace = aws_appautoscaling_target.cart.service_namespace
 
-      secrets = [
-        {
-          name      = "MYSQL_HOST"
-          valueFrom = aws_ssm_parameter.mysql_host.arn
-        }
-      ]
+#   target_tracking_scaling_policy_configuration {
 
-      logConfiguration = {
+#     predefined_metric_specification {
 
-        logDriver = "awslogs"
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.shipping.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#     target_value = 70
+#   }
+# }
 
-resource "aws_ecs_service" "shipping" {
+# ############ shipping setup #############
 
-  name = "${local.common_name_suffix}-shipping"
+# resource "aws_ecs_task_definition" "shipping" {
 
-  cluster = aws_ecs_cluster.main.id
+#   family = "${local.common_name_suffix}-shipping"
 
-  task_definition = aws_ecs_task_definition.shipping.arn
+#   network_mode = "awsvpc"
 
-  desired_count = 2
+#   requires_compatibilities = ["FARGATE"]
 
-  launch_type = "FARGATE"
+#   cpu    = 512
+#   memory = 1024
 
-  enable_execute_command = true
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-  health_check_grace_period_seconds = 100
+#     {
+#       name  = "shipping"
 
-  network_configuration {
+#       image = var.shipping_image
 
-    subnets = local.private_subnet_ids
+#       essential = true
 
-    security_groups = [
-      local.shipping_sg_id
-    ]
+#       portMappings = [
+#         {
+#           containerPort = 8080
+#           hostPort      = 8080
+#           protocol      = "tcp"
+#         }
+#       ]
+      
+#       secrets = [
+#         {
+#           name      = "CART_ENDPOINT"
+#           valueFrom = "/stackly/dev/cart-endpoint"
+#         },
+#         {
+#           name      = "DB_HOST"
+#           valueFrom = "/stackly/dev/db-host"
+#         }
+#       ]
 
-    assign_public_ip = false
-  }
+#       logConfiguration = {
 
-  service_registries {
+#         logDriver = "awslogs"
 
-    registry_arn = aws_service_discovery_service.services["shipping"].arn
-  }
-}
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.shipping.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
+# resource "aws_ecs_service" "shipping" {
 
-resource "aws_appautoscaling_target" "shipping" {
+#   name = "${local.common_name_suffix}-shipping"
 
-  max_capacity = 10
+#   cluster = aws_ecs_cluster.main.id
 
-  min_capacity = 2
+#   task_definition = aws_ecs_task_definition.shipping.arn
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.shipping.name}"
+#   desired_count = 2
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#   launch_type = "FARGATE"
 
-  service_namespace = "ecs"
-}
+#   enable_execute_command = true
 
+#   health_check_grace_period_seconds = 100
 
-resource "aws_appautoscaling_policy" "shipping_cpu" {
+#   network_configuration {
 
-  name = "${local.common_name_suffix}-shipping-cpu"
+#     subnets = local.private_subnet_ids
 
-  policy_type = "TargetTrackingScaling"
+#     security_groups = [
+#       local.shipping_sg_id
+#     ]
 
-  resource_id = aws_appautoscaling_target.shipping.resource_id
+#     assign_public_ip = false
+#   }
 
-  scalable_dimension = aws_appautoscaling_target.shipping.scalable_dimension
+#   service_registries {
 
-  service_namespace = aws_appautoscaling_target.shipping.service_namespace
+#     registry_arn = aws_service_discovery_service.services["shipping"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  target_tracking_scaling_policy_configuration {
+#   enable = true
 
-    predefined_metric_specification {
+#   rollback = true
+# }
+# }
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
 
-    target_value = 70
-  }
-}
+# resource "aws_appautoscaling_target" "shipping" {
 
-############ payment setup #############
+#   max_capacity = 10
 
-resource "aws_ecs_task_definition" "payment" {
+#   min_capacity = 2
 
-  family = "${local.common_name_suffix}-payment"
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.shipping.name}"
 
-  network_mode = "awsvpc"
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-  requires_compatibilities = ["FARGATE"]
+#   service_namespace = "ecs"
+# }
 
-  cpu    = 512
-  memory = 1024
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+# resource "aws_appautoscaling_policy" "shipping_cpu" {
 
-    {
-      name  = "payment"
+#   name = "${local.common_name_suffix}-shipping-cpu"
 
-      image = var.payment_image
+#   policy_type = "TargetTrackingScaling"
 
-      essential = true
+#   resource_id = aws_appautoscaling_target.shipping.resource_id
 
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
+#   scalable_dimension = aws_appautoscaling_target.shipping.scalable_dimension
 
-      secrets = [
-        {
-          name      = "MYSQL_HOST"
-          valueFrom = aws_ssm_parameter.mysql_host.arn
-        }
-      ]
+#   service_namespace = aws_appautoscaling_target.shipping.service_namespace
 
-      logConfiguration = {
+#   target_tracking_scaling_policy_configuration {
 
-        logDriver = "awslogs"
+#     predefined_metric_specification {
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.payment.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-resource "aws_ecs_service" "payment" {
+#     target_value = 70
+#   }
+# }
 
-  name = "${local.common_name_suffix}-payment"
+# ############ payment setup #############
 
-  cluster = aws_ecs_cluster.main.id
+# resource "aws_ecs_task_definition" "payment" {
 
-  task_definition = aws_ecs_task_definition.payment.arn
+#   family = "${local.common_name_suffix}-payment"
 
-  desired_count = 2
+#   network_mode = "awsvpc"
 
-  launch_type = "FARGATE"
+#   requires_compatibilities = ["FARGATE"]
 
-  enable_execute_command = true
+#   cpu    = 512
+#   memory = 1024
 
-  health_check_grace_period_seconds = 60
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-  network_configuration {
+#     {
+#       name  = "payment"
 
-    subnets = local.private_subnet_ids
+#       image = var.payment_image
 
-    security_groups = [
-      local.payment_sg_id
-    ]
+#       essential = true
 
-    assign_public_ip = false
-  }
+#       portMappings = [
+#         {
+#           containerPort = 8080
+#           hostPort      = 8080
+#           protocol      = "tcp"
+#         }
+#       ]
+#               environment = [
 
-  service_registries {
+#           {
+#             name  = "CART_HOST"
+#             value = "cart.internal"
+#           },
 
-    registry_arn = aws_service_discovery_service.services["payment"].arn
-  }
-}
+#           {
+#             name  = "CART_PORT"
+#             value = "8080"
+#           },
 
+#           {
+#             name  = "USER_HOST"
+#             value = "user.internal"
+#           },
 
-resource "aws_appautoscaling_target" "payment" {
+#           {
+#             name  = "USER_PORT"
+#             value = "8080"
+#           },
 
-  max_capacity = 10
+#           {
+#             name  = "AMQP_HOST"
+#             value = "rabbitmq.internal"
+#           },
 
-  min_capacity = 2
+#           {
+#             name  = "AMQP_USER"
+#             value = "roboshop"
+#           }
+#         ]
 
-  resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.payment.name}"
+#         secrets = [
 
-  scalable_dimension = "ecs:service:DesiredCount"
+#           {
+#             name      = "AMQP_PASSWORD"
+#             valueFrom = "/stackly/dev/amqp-password"
+#           }
+#         ]
 
-  service_namespace = "ecs"
-}
+#       logConfiguration = {
 
+#         logDriver = "awslogs"
 
-resource "aws_appautoscaling_policy" "payment_cpu" {
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.payment.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-  name = "${local.common_name_suffix}-payment-cpu"
+# resource "aws_ecs_service" "payment" {
 
-  policy_type = "TargetTrackingScaling"
+#   name = "${local.common_name_suffix}-payment"
 
-  resource_id = aws_appautoscaling_target.payment.resource_id
+#   cluster = aws_ecs_cluster.main.id
 
-  scalable_dimension = aws_appautoscaling_target.payment.scalable_dimension
+#   task_definition = aws_ecs_task_definition.payment.arn
 
-  service_namespace = aws_appautoscaling_target.payment.service_namespace
+#   desired_count = 2
 
-  target_tracking_scaling_policy_configuration {
+#   launch_type = "FARGATE"
 
-    predefined_metric_specification {
+#   enable_execute_command = true
 
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
+#   health_check_grace_period_seconds = 60
 
-    target_value = 70
-  }
-}
+#   network_configuration {
 
-############# mongodb setup #############
+#     subnets = local.private_subnet_ids
 
-resource "aws_ecs_task_definition" "mongodb" {
+#     security_groups = [
+#       local.payment_sg_id
+#     ]
 
-  family = "${local.common_name_suffix}-mongodb"
+#     assign_public_ip = false
+#   }
 
-  network_mode = "awsvpc"
+#   service_registries {
 
-  requires_compatibilities = ["FARGATE"]
+#     registry_arn = aws_service_discovery_service.services["payment"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  cpu    = 1024
-  memory = 2048
+#   enable = true
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#   rollback = true
+# }
+# }
 
-    {
-      name  = "mongodb"
 
-      image = var.mongodb_image
+# resource "aws_appautoscaling_target" "payment" {
 
-      essential = true
+#   max_capacity = 10
 
-      portMappings = [
-        {
-          containerPort = 27017
-          hostPort      = 27017
-          protocol      = "tcp"
-        }
-      ]
+#   min_capacity = 2
 
-      environment = [
-        {
-          name  = "MONGO_INITDB_DATABASE"
-          value = "catalogue"
-        }
-      ]
+#   resource_id = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.payment.name}"
 
-      secrets = [
-        {
-          name      = "MONGO_INITDB_ROOT_USERNAME"
-          valueFrom = aws_ssm_parameter.mongodb_username.arn
-        },
-        {
-          name      = "MONGO_INITDB_ROOT_PASSWORD"
-          valueFrom = aws_ssm_parameter.mongodb_password.arn
-        }
-      ]
+#   scalable_dimension = "ecs:service:DesiredCount"
 
-      logConfiguration = {
+#   service_namespace = "ecs"
+# }
 
-        logDriver = "awslogs"
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.mongodb.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+# resource "aws_appautoscaling_policy" "payment_cpu" {
 
-resource "aws_ecs_service" "mongodb" {
+#   name = "${local.common_name_suffix}-payment-cpu"
 
-  name = "${local.common_name_suffix}-mongodb"
+#   policy_type = "TargetTrackingScaling"
 
-  cluster = aws_ecs_cluster.main.id
+#   resource_id = aws_appautoscaling_target.payment.resource_id
 
-  task_definition = aws_ecs_task_definition.mongodb.arn
+#   scalable_dimension = aws_appautoscaling_target.payment.scalable_dimension
 
-  desired_count = 1
+#   service_namespace = aws_appautoscaling_target.payment.service_namespace
 
-  launch_type = "FARGATE"
+#   target_tracking_scaling_policy_configuration {
 
-  enable_execute_command = true
+#     predefined_metric_specification {
 
-  health_check_grace_period_seconds = 60
+#       predefined_metric_type = "ECSServiceAverageCPUUtilization"
+#     }
 
-  network_configuration {
+#     target_value = 70
+#   }
+# }
 
-    subnets = local.private_subnet_ids
+# ############# mongodb setup #############
 
-    security_groups = [
-      local.mongodb_sg_id
-    ]
+# resource "aws_ecs_task_definition" "mongodb" {
 
-    assign_public_ip = false
-  }
+#   family = "${local.common_name_suffix}-mongodb"
 
-  service_registries {
+#   network_mode = "awsvpc"
 
-    registry_arn = aws_service_discovery_service.services["mongodb"].arn
-  }
-}
+#   requires_compatibilities = ["FARGATE"]
 
+#   cpu    = 1024
+#   memory = 2048
 
-############# mysql setup #############
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-resource "aws_ecs_task_definition" "mysql" {
+#     {
+#       name  = "mongodb"
 
-  family = "${local.common_name_suffix}-mysql"
+#       image = var.mongodb_image
 
-  network_mode = "awsvpc"
+#       essential = true
 
-  requires_compatibilities = ["FARGATE"]
+#       portMappings = [
+#         {
+#           containerPort = 27017
+#           hostPort      = 27017
+#           protocol      = "tcp"
+#         }
+#       ]
 
-  cpu    = 1024
-  memory = 2048
+#       logConfiguration = {
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#         logDriver = "awslogs"
 
-    {
-      name  = "mysql"
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.mongodb.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-      image = var.mysql_image
+# resource "aws_ecs_service" "mongodb" {
 
-      essential = true
+#   name = "${local.common_name_suffix}-mongodb"
 
-      portMappings = [
-        {
-          containerPort = 3306
-          hostPort      = 3306
-          protocol      = "tcp"
-        }
-      ]
+#   cluster = aws_ecs_cluster.main.id
 
-      environment = [
-        {
-          name  = "MYSQL_DATABASE"
-          value = "shipping"
-        }
-      ]
+#   task_definition = aws_ecs_task_definition.mongodb.arn
 
-      secrets = [
-        {
-          name      = "MYSQL_ROOT_PASSWORD"
-          valueFrom = aws_ssm_parameter.mysql_root_password.arn
-        },
-        {
-          name      = "MYSQL_USER"
-          valueFrom = aws_ssm_parameter.mysql_user.arn
-        },
-        {
-          name      = "MYSQL_PASSWORD"
-          valueFrom = aws_ssm_parameter.mysql_password.arn
-        }
-      ]
+#   desired_count = 1
 
-      logConfiguration = {
+#   launch_type = "FARGATE"
 
-        logDriver = "awslogs"
+#   enable_execute_command = true
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.mysql.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#   health_check_grace_period_seconds = 60
 
-resource "aws_ecs_service" "mysql" {
+#   network_configuration {
 
-  name = "${local.common_name_suffix}-mysql"
+#     subnets = local.private_subnet_ids
 
-  cluster = aws_ecs_cluster.main.id
+#     security_groups = [
+#       local.mongodb_sg_id
+#     ]
 
-  task_definition = aws_ecs_task_definition.mysql.arn
+#     assign_public_ip = false
+#   }
 
-  desired_count = 1
+#   service_registries {
 
-  launch_type = "FARGATE"
+#     registry_arn = aws_service_discovery_service.services["mongodb"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  enable_execute_command = true
+#   enable = true
 
-  health_check_grace_period_seconds = 100
+#   rollback = true
+# }
+# }
 
-  network_configuration {
 
-    subnets = local.private_subnet_ids
+# ############# mysql setup #############
 
-    security_groups = [
-      local.mysql_sg_id
-    ]
+# resource "aws_ecs_task_definition" "mysql" {
 
-    assign_public_ip = false
-  }
+#   family = "${local.common_name_suffix}-mysql"
 
-  service_registries {
+#   network_mode = "awsvpc"
 
-    registry_arn = aws_service_discovery_service.services["mysql"].arn
-  }
-}
+#   requires_compatibilities = ["FARGATE"]
 
+#   cpu    = 1024
+#   memory = 2048
 
-############## redis setup #############
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-resource "aws_ecs_task_definition" "redis" {
+#     {
+#       name  = "mysql"
 
-  family = "${local.common_name_suffix}-redis"
+#       image = var.mysql_image
 
-  network_mode = "awsvpc"
+#       essential = true
 
-  requires_compatibilities = ["FARGATE"]
+#       portMappings = [
+#         {
+#           containerPort = 3306
+#           hostPort      = 3306
+#           protocol      = "tcp"
+#         }
+#       ]
 
-  cpu    = 512
-  memory = 1024
+#       secrets = [
+#         {
+#           name      = "MYSQL_ROOT_PASSWORD"
+#           valueFrom = "/stackly/dev/mysql-root-password"
+#         }
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#       ]
 
-    {
-      name  = "redis"
+#       logConfiguration = {
 
-      image = var.redis_image
+#         logDriver = "awslogs"
 
-      essential = true
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.mysql.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-      portMappings = [
-        {
-          containerPort = 6379
-          hostPort      = 6379
-          protocol      = "tcp"
-        }
-      ]
+# resource "aws_ecs_service" "mysql" {
 
-      command = [
-        "redis-server",
-        "--appendonly",
-        "yes"
-      ]
+#   name = "${local.common_name_suffix}-mysql"
 
-      logConfiguration = {
+#   cluster = aws_ecs_cluster.main.id
 
-        logDriver = "awslogs"
+#   task_definition = aws_ecs_task_definition.mysql.arn
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.redis.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#   desired_count = 1
 
+#   launch_type = "FARGATE"
 
-resource "aws_ecs_service" "redis" {
+#   enable_execute_command = true
 
-  name = "${local.common_name_suffix}-redis"
+#   health_check_grace_period_seconds = 100
 
-  cluster = aws_ecs_cluster.main.id
+#   network_configuration {
 
-  task_definition = aws_ecs_task_definition.redis.arn
+#     subnets = local.private_subnet_ids
 
-  desired_count = 1
+#     security_groups = [
+#       local.mysql_sg_id
+#     ]
 
-  launch_type = "FARGATE"
+#     assign_public_ip = false
+#   }
 
-  enable_execute_command = true
+#   service_registries {
 
-  health_check_grace_period_seconds = 60
+#     registry_arn = aws_service_discovery_service.services["mysql"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  network_configuration {
+#   enable = true
 
-    subnets = local.private_subnet_ids
+#   rollback = true
+# }
+# }
 
-    security_groups = [
-      local.redis_sg_id
-    ]
 
-    assign_public_ip = false
-  }
+# ############## redis setup #############
 
-  service_registries {
+# resource "aws_ecs_task_definition" "redis" {
 
-    registry_arn = aws_service_discovery_service.services["redis"].arn
-  }
-}
+#   family = "${local.common_name_suffix}-redis"
 
-############# rabbitmq setup #############
+#   network_mode = "awsvpc"
 
-resource "aws_ecs_task_definition" "rabbitmq" {
+#   requires_compatibilities = ["FARGATE"]
 
-  family = "${local.common_name_suffix}-rabbitmq"
+#   cpu    = 512
+#   memory = 1024
 
-  network_mode = "awsvpc"
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
 
-  requires_compatibilities = ["FARGATE"]
+#     {
+#       name  = "redis"
 
-  cpu    = 1024
-  memory = 2048
+#       image = var.redis_image
 
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-  container_definitions = jsonencode([
+#       essential = true
 
-    {
-      name  = "rabbitmq"
+#       portMappings = [
+#         {
+#           containerPort = 6379
+#           hostPort      = 6379
+#           protocol      = "tcp"
+#         }
+#       ]
 
-      image = var.rabbitmq_image
+#       command = [
+#         "redis-server",
+#         "--appendonly",
+#         "yes"
+#       ]
 
-      essential = true
+#       logConfiguration = {
 
-      portMappings = [
-        {
-          containerPort = 5672
-          hostPort      = 5672
-          protocol      = "tcp"
-        },
-        {
-          containerPort = 15672
-          hostPort      = 15672
-          protocol      = "tcp"
-        }
-      ]
+#         logDriver = "awslogs"
 
-      secrets = [
-        {
-          name      = "RABBITMQ_DEFAULT_USER"
-          valueFrom = aws_ssm_parameter.rabbitmq_user.arn
-        },
-        {
-          name      = "RABBITMQ_DEFAULT_PASS"
-          valueFrom = aws_ssm_parameter.rabbitmq_password.arn
-        }
-      ]
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.redis.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
 
-      logConfiguration = {
 
-        logDriver = "awslogs"
+# resource "aws_ecs_service" "redis" {
 
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.rabbitmq.name
-          awslogs-region        = var.region
-          awslogs-stream-prefix = "ecs"
-        }
-      }
-    }
-  ])
-}
+#   name = "${local.common_name_suffix}-redis"
 
-resource "aws_ecs_service" "rabbitmq" {
+#   cluster = aws_ecs_cluster.main.id
 
-  name = "${local.common_name_suffix}-rabbitmq"
+#   task_definition = aws_ecs_task_definition.redis.arn
 
-  cluster = aws_ecs_cluster.main.id
+#   desired_count = 1
 
-  task_definition = aws_ecs_task_definition.rabbitmq.arn
+#   launch_type = "FARGATE"
 
-  desired_count = 1
+#   enable_execute_command = true
 
-  launch_type = "FARGATE"
+#   health_check_grace_period_seconds = 60
 
-  enable_execute_command = true
+#   network_configuration {
 
-  health_check_grace_period_seconds = 60
+#     subnets = local.private_subnet_ids
 
-  network_configuration {
+#     security_groups = [
+#       local.redis_sg_id
+#     ]
 
-    subnets = local.private_subnet_ids
+#     assign_public_ip = false
+#   }
 
-    security_groups = [
-      local.rabbitmq_sg_id
-    ]
+#   service_registries {
 
-    assign_public_ip = false
-  }
+#     registry_arn = aws_service_discovery_service.services["redis"].arn
+#   }
+#   deployment_circuit_breaker {
 
-  service_registries {
+#   enable = true
 
-    registry_arn = aws_service_discovery_service.services["rabbitmq"].arn
-  }
-}
+#   rollback = true
+# }
+# }
+
+# ############# rabbitmq setup #############
+
+# resource "aws_ecs_task_definition" "rabbitmq" {
+
+#   family = "${local.common_name_suffix}-rabbitmq"
+
+#   network_mode = "awsvpc"
+
+#   requires_compatibilities = ["FARGATE"]
+
+#   cpu    = 1024
+#   memory = 2048
+
+#   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+#   task_role_arn = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
+
+#     {
+#       name  = "rabbitmq"
+
+#       image = var.rabbitmq_image
+
+#       essential = true
+
+#       portMappings = [
+#         {
+#           containerPort = 5672
+#           hostPort      = 5672
+#           protocol      = "tcp"
+#         },
+#         {
+#           containerPort = 15672
+#           hostPort      = 15672
+#           protocol      = "tcp"
+#         }
+#       ]
+
+#       environment = [
+#         {
+#           name      = "RABBITMQ_DEFAULT_USER"
+#           value = "roboshop"
+#         },
+#         {
+#           name      = "RABBITMQ_DEFAULT_PASS"
+#           value = "roboshop123"
+#         }
+#       ]
+
+#       logConfiguration = {
+
+#         logDriver = "awslogs"
+
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.rabbitmq.name
+#           awslogs-region        = var.region
+#           awslogs-stream-prefix = "ecs"
+#         }
+#       }
+#     }
+#   ])
+# }
+
+# resource "aws_ecs_service" "rabbitmq" {
+
+#   name = "${local.common_name_suffix}-rabbitmq"
+
+#   cluster = aws_ecs_cluster.main.id
+
+#   task_definition = aws_ecs_task_definition.rabbitmq.arn
+
+#   desired_count = 1
+
+#   launch_type = "FARGATE"
+
+#   enable_execute_command = true
+
+#   health_check_grace_period_seconds = 60
+
+#   network_configuration {
+
+#     subnets = local.private_subnet_ids
+
+#     security_groups = [
+#       local.rabbitmq_sg_id
+#     ]
+
+#     assign_public_ip = false
+#   }
+
+#   service_registries {
+
+#     registry_arn = aws_service_discovery_service.services["rabbitmq"].arn
+#   }
+#   deployment_circuit_breaker {
+
+#   enable = true
+
+#   rollback = true
+# }
+# }
