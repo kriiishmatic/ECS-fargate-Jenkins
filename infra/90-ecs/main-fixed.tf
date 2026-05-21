@@ -454,20 +454,15 @@ resource "aws_ecs_task_definition" "catalogue" {
               name  = "CATALOGUE_PORT"
 
               value = "8080"
-            }
-          ]
-
-
-      secrets = [
-
+            },
             {
               name      = "MONGO_URL"
-              valueFrom = "/stackly/dev/mongodb-url"
+              value = "mongodb.internal"
             },
 
             {
               name      = "CATALOGUE_HOST"
-              valueFrom = "/stackly/dev/catalogue-host"
+              value = "catalogue.internal"
             }
       ]
       healthCheck = {
@@ -622,16 +617,15 @@ resource "aws_ecs_task_definition" "user" {
 
         {
           name  = "REDIS_HOST"
-          value = "redis.internal"
+          value = "redis://redis.internal:6379"
+        },
+        {
+          name  = "MONGO_URL"
+          value = "mongodb://mongodb.internal:27017/users"
         }
       ]
 
-      secrets = [
-        {
-          name      = "MONGO_URL"
-          valueFrom = "/stackly/dev/mongodb-url"
-        }
-      ]
+      
 
       healthCheck = {
 
