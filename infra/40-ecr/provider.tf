@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "terraform-state-capzap"
+    bucket = "terraform-backend-state-ecs"
     key    = "stackly-jenkins-ecr-ecs"
     region = "us-east-1"
     use_lockfile = true
