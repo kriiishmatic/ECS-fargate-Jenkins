@@ -1,0 +1,107 @@
+services:
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/frontend:1.0.0
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - catalogue
+      - cart
+      - user
+      - payment
+      - shipping
+
+  mongodb:
+    build:
+      context: ./mongodb
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/mongodb:1.0.0
+    container_name: mongodb
+    volumes:
+      - mongodb:/data/db
+
+  redis:
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/redis:1.0.0
+    container_name: redis
+    volumes:
+      - redis:/data
+
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/mysql:1.0.0
+    container_name: mysql
+    volumes:
+      - mysql:/var/lib/mysql
+
+  rabbitmq:
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/rabbitmq:1.0.0
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: roboshop
+      RABBITMQ_DEFAULT_PASS: roboshop123
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+
+  catalogue:
+    build:
+      context: ./catalogue
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/catalogue:1.0.0
+    container_name: catalogue
+    depends_on:
+      - mongodb
+
+  cart:
+    build:
+      context: ./cart
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/cart:1.0.0
+    container_name: cart
+    depends_on:
+      - mongodb
+      - catalogue
+      - user
+
+  user:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/user:1.0.0
+    container_name: user
+    depends_on:
+      - redis
+
+  payment:
+    build:
+      context: ./payment
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/payment:1.0.0
+    container_name: payment
+    depends_on:
+      - rabbitmq
+
+  shipping:
+    build:
+      context: ./shipping
+      dockerfile: Dockerfile
+    image: 392401698561.dkr.ecr.us-east-1.amazonaws.com/project-k/shipping:1.0.0
+    container_name: shipping
+    depends_on:
+      - mysql
+
+volumes:
+  mongodb:
+  redis:
+  mysql:
+  rabbitmq:
+
+networks:
+  default:
+    name: project-k
+    driver: bridge
+
