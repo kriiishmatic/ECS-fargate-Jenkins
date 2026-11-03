@@ -91,17 +91,17 @@ pipeline {
                         }
                     }
                 }
-                stage('EKS'){
-                    steps {
-                        script {
-                            build job: '90-ecs',
-                                wait: false, // Wait for completion
-                                propagate: false // Propagate status
-                        }
-                    }
-                }
-            }
-        }
+        //         stage('ECS'){
+        //             steps {
+        //                 script {
+        //                     build job: '90-ecs',
+        //                         wait: false, // Wait for completion
+        //                         propagate: false // Propagate status
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         stage('ALB'){
             steps {
                 script {
