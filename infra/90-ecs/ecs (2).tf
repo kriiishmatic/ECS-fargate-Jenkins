@@ -398,54 +398,6 @@ resource "aws_ecs_service" "frontend" {
   }
 }
 
-resource "aws_ecs_task_definition" "catalogue" {
-
-  family = "${local.common_name_suffix}-catalogue"
-
-  network_mode = "awsvpc"
-
-  requires_compatibilities = ["FARGATE"]
-
-  cpu    = 256
-  memory = 512
-
-  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn = aws_iam_role.ecs_task_role.arn
-
-  container_definitions = jsonencode([
-
-    {
-      name  = "catalogue"
-
-      image = var.catalogue_image
-
-      essential = true
-
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-          protocol      = "tcp"
-        }
-      ]
-
-          environment = [
-
-            {
-              name  = "CATALOGUE_SERVER_PORT"
-
-              value = "8080"
-            },
-            {
-              name  = "MONGO_URL"
-              value = "mongodb://mongodb.internal:27017/catalogue"
-            },
-
-            {
-              name      = "CATALOGUE_HOST"
-              value = "catalogue.internal"
-            }
-      ]
 resource "aws_appautoscaling_target" "frontend" {
 
   max_capacity = 10
@@ -483,25 +435,61 @@ resource "aws_appautoscaling_policy" "frontend_cpu" {
   }
 }
 
-########### catalogue setup #############
+resource "aws_ecs_task_definition" "catalogue" {
 
+  family = "${local.common_name_suffix}-catalogue"
+
+  network_mode = "awsvpc"
+
+  requires_compatibilities = ["FARGATE"]
+
+  cpu    = 256
+  memory = 512
+
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "catalogue"
+      image     = var.catalogue_image
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        {
+          name  = "CATALOGUE_SERVER_PORT"
+          value = "8080"
+        },
+        {
+          name  = "MONGO_URL"
+          value = "mongodb://mongodb.internal:27017/catalogue"
+        },
+        {
+          name  = "CATALOGUE_HOST"
+          value = "catalogue.internal"
+        }
+      ]
 
       healthCheck = {
-
         command = [
           "CMD-SHELL",
           "curl -f http://localhost:8080/health || exit 1"
         ]
-
         interval = 30
         timeout  = 5
         retries  = 3
       }
 
       logConfiguration = {
-
         logDriver = "awslogs"
-
         options = {
           awslogs-group         = aws_cloudwatch_log_group.catalogue.name
           awslogs-region        = var.region
@@ -511,7 +499,6 @@ resource "aws_appautoscaling_policy" "frontend_cpu" {
     }
   ])
 }
-
 
 resource "aws_ecs_service" "catalogue" {
 
