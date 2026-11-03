@@ -1,129 +1,123 @@
+
 pipeline {
-    // These are pre-build sections
     agent {
         node {
             label 'AGENT-1'
         }
     }
+
     environment {
         COURSE = "Jenkins"
+        AWS_DEFAULT_REGION = "us-east-1"
+        AWS_REGION = "us-east-1"
     }
+
     options {
-        timeout(time: 60, unit: 'MINUTES') 
+        timeout(time: 60, unit: 'MINUTES')
         disableConcurrentBuilds()
         ansiColor('xterm')
+        timestamps()
     }
-    
-  
+
     stages {
         stage('Init') {
             steps {
-                script{
-                    withAWS(region:'us-east-1',credentials:'aws-creds') {
-                        sh """
+                script {
+                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                        sh '''
                             cd infra/10-sg
                             terraform init
-                        """
+                        '''
                     }
-                }
-            }
-        }
-        stage('Plan') {
-            steps {
-                script{
-                    withAWS(region:'us-east-1',credentials:'aws-creds') {
-                        sh """
-                            cd infra/10-sg
-                            terraform plan
-                        """
-                    }
-                }
-            }
-        }
-        stage('Deploy') {
-                      
-            steps {
-                script{
-                    withAWS(region:'us-east-1',credentials:'aws-creds') {
-                        sh """
-                            cd infra/10-sg
-                            terraform apply -auto-approve
-                        """
-                    }
-                }
-            }
-        }
-        stage('Parellel Trigger'){
-            parallel {
-                stage('Bastion'){
-                    steps {
-                        script {
-                            build job: '20-bastion',
-                                wait: false, // Wait for completion
-                                propagate: false // Propagate status
-                        }
-                    }
-                }
-                stage('SG Rules'){
-                    steps {
-                        script {
-                            build job: '30-sg-rules',
-                                wait: false, // Wait for completion
-                                propagate: false // Propagate status
-                        }
-                    }
-                }
-                stage('ECR'){
-                    steps {
-                        script {
-                            build job: '40-ecr',
-                                wait: false, // Wait for completion
-                                propagate: false // Propagate status
-                        }
-                    }
-                }
-                stage('ACM'){
-                    steps {
-                        script {
-                            build job: '70-acm',
-                                wait: true, // Wait for completion
-                                propagate: false // Propagate status
-                        }
-                    }
-                }
-        //         stage('ECS'){
-        //             steps {
-        //                 script {
-        //                     build job: '90-ecs',
-        //                         wait: false, // Wait for completion
-        //                         propagate: false // Propagate status
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-        stage('ALB'){
-            steps {
-                script {
-                    build job: '80-frontend-alb',
-                        wait: false, // Wait for completion
-                        propagate: false // Propagate status
                 }
             }
         }
 
+        stage('Plan') {
+            steps {
+                script {
+                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                        sh '''
+                            cd infra/10-sg
+                            terraform plan
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                        sh '''
+                            cd infra/10-sg
+                            terraform apply -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Parallel Trigger') {
+            parallel {
+                stage('Bastion') {
+                    steps {
+                        build job: '20-bastion',
+                            wait: false,
+                            propagate: false
+                    }
+                }
+
+                stage('SG Rules') {
+                    steps {
+                        build job: '30-sg-rules',
+                            wait: false,
+                            propagate: false
+                    }
+                }
+
+                stage('ECR') {
+                    steps {
+                        build job: '40-ecr',
+                            wait: false,
+                            propagate: false
+                    }
+                }
+
+                stage('ACM') {
+                    steps {
+                        build job: '70-acm',
+                            wait: true,
+                            propagate: false
+                    }
+                }
+            }
+        }
+
+        stage('ALB') {
+            steps {
+                build job: '80-frontend-alb',
+                    wait: false,
+                    propagate: false
+            }
+        }
     }
-    post{
-        always{
+
+    post {
+        always {
             echo 'I will always say Hello again!'
             cleanWs()
         }
+
         success {
             echo 'I will run if success'
         }
+
         failure {
             echo 'I will run if failure'
         }
+
         aborted {
             echo 'pipeline is aborted'
         }
