@@ -1,5 +1,5 @@
 variable "project_name" {
-  default = "stackly"
+  default = "project-k"
 }
 variable "environment" {
   default = "dev"
