@@ -15,6 +15,7 @@ locals {
   mysql_sg_id = data.aws_ssm_parameter.mysql_sg_id.value
   redis_sg_id = data.aws_ssm_parameter.redis_sg_id.value
   rabbitmq_sg_id = data.aws_ssm_parameter.rabbitmq_sg_id.value
+  frontend_alb_target_group_arn = data.aws_ssm_parameter.frontend_alb_target_group_arn.value
   
   common_tags = {
     Project = var.project_name

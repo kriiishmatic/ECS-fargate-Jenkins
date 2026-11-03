@@ -1,5 +1,5 @@
 variable "project" {
-    default = "stackly"
+    default = "project-k"
 }
 
 variable "environment" {
@@ -8,13 +8,13 @@ variable "environment" {
 
 variable "zone_name" {
   type        = string
-  default     = "kriiishmatic.fun"
+  default     = "project-k.online"
   description = "description"
 }
 
 variable "zone_id" {
   type        = string
-  default     = "Z067018727RH31TLMADD9"
+  default     = "Z031931614KGBZCR4BQA8"
   description = "description"
 }
 

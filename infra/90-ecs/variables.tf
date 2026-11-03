@@ -18,7 +18,7 @@ variable "catalogue_image" {
   default = "854481201869.dkr.ecr.us-east-1.amazonaws.com/stackly/catalogue:1.0.0"
 }
 variable "cart_image" {
-  default =  ""
+  default =  "854481201869.dkr.ecr.us-east-1.amazonaws.com/stackly/cart:1.0.0"
 }
 variable "user_image" {
   default =  "854481201869.dkr.ecr.us-east-1.amazonaws.com/stackly/user:1.0.0"

@@ -3,7 +3,7 @@ variable "vpc_cidr" {
 }
 
 variable "project_name" {
-    default = "stackly"
+    default = "project-k"
 }
 
 variable "environment"{
@@ -12,7 +12,7 @@ variable "environment"{
 
 variable "vpc_tags" {
     default = {
-        Purpose = "stackly VPC"
+        Purpose = "project-k VPC"
         DontDelete = "true"
     }
 }

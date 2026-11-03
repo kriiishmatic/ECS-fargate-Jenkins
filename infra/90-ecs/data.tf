@@ -45,7 +45,7 @@ data "aws_ssm_parameter" "frontend_alb_certificate_arn" {
   
 }
 data"aws_ssm_parameter" "mongodb_sg_id" {
-  name = "/${var.project_name}/${var.environment}/mongpdb_sg_id"
+  name = "/${var.project_name}/${var.environment}/mongodb_sg_id"
   
 }
 data"aws_ssm_parameter" "mysql_sg_id" {
@@ -57,5 +57,10 @@ data"aws_ssm_parameter" "redis_sg_id" {
 }
 data"aws_ssm_parameter" "rabbitmq_sg_id" {
   name = "/${var.project_name}/${var.environment}/rabbitmq_sg_id"
+  
+}
+
+data "aws_ssm_parameter" "frontend_alb_target_group_arn" {
+  name = "/${var.project_name}/${var.environment}/frontend_alb_target_group_arn"
   
 }

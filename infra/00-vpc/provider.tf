@@ -7,8 +7,8 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "terraform-state-capzap"
-    key    = "stackly-jenkins-vpc-ecs"
+    bucket = "terraform-project-k"
+    key    = "project-k-ecs-jenkins-vpc"
     region = "us-east-1"
     use_lockfile = true
     encrypt = true

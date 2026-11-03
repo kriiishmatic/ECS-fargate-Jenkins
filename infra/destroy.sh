@@ -3,7 +3,7 @@
 set -e
 
 echo "Destroying EKS..."
-cd 90-eks
+cd 90-ecs
 terraform init
 terraform destroy -auto-approve
 cd ..

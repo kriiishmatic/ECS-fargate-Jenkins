@@ -295,8 +295,8 @@ resource "aws_ecs_task_definition" "frontend" {
 
       portMappings = [
         {
-          containerPort = 80
-          hostPort      = 80
+          containerPort = 8080
+          hostPort      = 8080
           protocol      = "tcp"
         }
       ]
@@ -358,11 +358,11 @@ resource "aws_ecs_service" "frontend" {
 
   load_balancer {
 
-    target_group_arn = aws_lb_target_group.frontend.arn
+    target_group_arn = local.frontend_alb_target_group_arn
 
     container_name = "frontend"
 
-    container_port = 80
+    container_port = 8080
   }
 
   service_registries {
@@ -616,7 +616,7 @@ resource "aws_ecs_task_definition" "user" {
         },
 
         {
-          name  = "REDIS_HOST"
+          name  = "REDIS_URL"
           value = "redis://redis.internal:6379"
         },
         {
@@ -1341,8 +1341,8 @@ resource "aws_ecs_task_definition" "mysql" {
 
   requires_compatibilities = ["FARGATE"]
 
-  cpu    = 256
-  memory = 512
+  cpu    = 512
+  memory = 1024
 
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn = aws_iam_role.ecs_task_role.arn

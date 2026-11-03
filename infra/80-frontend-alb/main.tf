@@ -49,22 +49,29 @@ resource "aws_route53_record" "frontend_alb" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name     = "${local.common_name_suffix}-frontend"
-  port     = 8080
-  protocol = "HTTP"
+
+  name_prefix = "frnt-"
+
+  port        = 80
+  protocol    = "HTTP"
   target_type = "ip"
-  vpc_id   = local.vpc_id
-  deregistration_delay = 60 # waiting period before deleting the instance
+  vpc_id      = local.vpc_id
+
+  deregistration_delay = 60
 
   health_check {
-    healthy_threshold = 2
-    interval = 10
-    matcher = "200-299"
-    path = "/"
-    port = 8080
-    protocol = "HTTP"
-    timeout = 2
+    healthy_threshold   = 2
+    interval            = 10
+    matcher             = "200-299"
+    path                = "/"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
     unhealthy_threshold = 2
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 

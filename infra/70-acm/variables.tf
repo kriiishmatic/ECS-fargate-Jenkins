@@ -1,5 +1,5 @@
 variable "project_name" {
-    default = "stackly"
+    default = "project-k"
 }
 
 variable "environment" {
@@ -7,9 +7,9 @@ variable "environment" {
 }
 
 variable "domain_name" {
-    default = "kriiishmatic.fun"
+    default = "project-k.online"
 }
 
 variable "zone_id" {
-    default = "Z05479302GBMIMY4I5ABI"
+    default = "Z031931614KGBZCR4BQA8"
 }

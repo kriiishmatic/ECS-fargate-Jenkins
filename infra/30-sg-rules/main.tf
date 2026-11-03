@@ -913,7 +913,7 @@ resource "aws_security_group_rule" "bastion_from_laptop" {
 
   security_group_id = local.bastion_sg_id
 
-  cidr_blocks = ["YOUR_PUBLIC_IP/32"]
+  cidr_blocks = ["10.0.0.0/16"]
 
   from_port = 22
   to_port   = 22

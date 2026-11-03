@@ -2,7 +2,7 @@ resource "aws_instance" "jenkins" {
   ami           = local.ami_id
   instance_type = "t3.small"
   vpc_security_group_ids = [aws_security_group.main.id]
-  subnet_id = "subnet-09e1785d7668c8762" #This my default subnet
+  subnet_id = "subnet-08a8667d42255aab0" #This my default subnet
 
   
   root_block_device {
@@ -22,7 +22,7 @@ resource "aws_instance" "jenkins_agent" {
   ami           = local.ami_id
   instance_type = "t3.small"
   vpc_security_group_ids = [aws_security_group.main.id]
-  subnet_id = "subnet-09e1785d7668c8762" #This my default subnet
+  subnet_id = "subnet-08a8667d42255aab0" #This my default subnet
 
 
   root_block_device {
