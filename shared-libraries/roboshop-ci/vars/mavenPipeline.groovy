@@ -1,3 +1,4 @@
+
 import groovy.json.JsonSlurperClassic
 
 def captureStageFailure(String stageName, Closure body) {
@@ -74,25 +75,6 @@ def call(Map config = [:]) {
         // --------------------------------------------------
 
         stages {
-
-            // --------------------------------------------------
-            // Notify Build Started
-            // --------------------------------------------------
-
-            stage('Notify Build Started') {
-                steps {
-                    script {
-                        notifyPipeline(
-                            status: 'CI STARTED',
-                            message: """
-                            Shipping CI build has started.
-                            Service: ${env.SERVICE_NAME}
-                            Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
-                            """
-                        )
-                    }
-                }
-            }
 
             // --------------------------------------------------
             // Checkout
@@ -193,7 +175,7 @@ def call(Map config = [:]) {
                                     validPusherId
                                 ) {
 
-                                    // Store the values for later pipeline stages
+                                    // Store values for later pipeline stages
                                     // and post-build Slack notifications.
 
                                     env.GITHUB_PUSHER_LOGIN = pusherLogin.toString()
@@ -244,6 +226,87 @@ def call(Map config = [:]) {
                             Continuing CI with the normal Jenkins trigger information.
                             """
                         }
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // Capture Jenkins Trigger Identity
+            // --------------------------------------------------
+
+            stage('Capture Jenkins Trigger Identity') {
+                steps {
+                    script {
+
+                        def causes = currentBuild.getBuildCauses()
+
+                        def userCause = causes.find {
+                            it['_class'] == 'hudson.model.Cause$UserIdCause'
+                        }
+
+                        def causeDescription = causes
+                            .collect { it['shortDescription'] }
+                            .findAll { it }
+                            .join('; ')
+
+                        if (userCause) {
+
+                            env.JENKINS_TRIGGER_TYPE = 'Manual Jenkins Build'
+
+                            env.JENKINS_TRIGGER_USER =
+                                userCause['userName'] ?:
+                                userCause['userId'] ?:
+                                'Unknown Jenkins user'
+
+                        } else if (env.GITHUB_PUSHER_LOGIN) {
+
+                            env.JENKINS_TRIGGER_TYPE = 'GitHub Push Webhook'
+
+                            env.JENKINS_TRIGGER_USER =
+                                'Not applicable (webhook-triggered)'
+
+                        } else {
+
+                            env.JENKINS_TRIGGER_TYPE =
+                                causeDescription ?: 'Automated trigger'
+
+                            env.JENKINS_TRIGGER_USER = 'Not available'
+                        }
+
+                        env.JENKINS_TRIGGER_CAUSE =
+                            causeDescription ?: 'Not available'
+
+                        echo "Trigger type: ${env.JENKINS_TRIGGER_TYPE}"
+                        echo "Jenkins user: ${env.JENKINS_TRIGGER_USER}"
+                        echo "Trigger cause: ${env.JENKINS_TRIGGER_CAUSE}"
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // Notify Build Started
+            // --------------------------------------------------
+
+            stage('Notify Build Started') {
+                steps {
+                    script {
+                        notifyPipeline(
+                            status: 'CI STARTED',
+                            message: """
+                            Shipping CI build has started.
+
+                            Service: ${env.SERVICE_NAME}
+                            Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
+                            Commit: ${env.GIT_SHORT_COMMIT ?: 'Not available'}
+
+                            Trigger Type: ${env.JENKINS_TRIGGER_TYPE ?: 'Not available'}
+                            Jenkins User: ${env.JENKINS_TRIGGER_USER ?: 'Not available'}
+                            Trigger Cause: ${env.JENKINS_TRIGGER_CAUSE ?: 'Not available'}
+
+                            GitHub Pusher: ${env.GITHUB_PUSHER_LOGIN ?: 'Not available'}
+                            GitHub User ID: ${env.GITHUB_PUSHER_ID ?: 'Not available'}
+                            """
+                        )
                     }
                 }
             }
@@ -362,6 +425,15 @@ def call(Map config = [:]) {
 
                         Service: ${env.SERVICE_NAME}
                         Version: ${env.BUILD_VERSION ?: 'N/A'}
+                        Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
+                        Commit: ${env.GIT_SHORT_COMMIT ?: 'Not available'}
+
+                        Trigger Type: ${env.JENKINS_TRIGGER_TYPE ?: 'Not available'}
+                        Jenkins User: ${env.JENKINS_TRIGGER_USER ?: 'Not available'}
+                        Trigger Cause: ${env.JENKINS_TRIGGER_CAUSE ?: 'Not available'}
+
+                        GitHub Pusher: ${env.GITHUB_PUSHER_LOGIN ?: 'Not available'}
+                        GitHub User ID: ${env.GITHUB_PUSHER_ID ?: 'Not available'}
 
                         CI completed successfully. Ready for PR merge.
                         """
@@ -383,8 +455,18 @@ def call(Map config = [:]) {
                         Shipping CI build failed.
 
                         Service: ${env.SERVICE_NAME}
+                        Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
+                        Commit: ${env.GIT_SHORT_COMMIT ?: 'Not available'}
+
                         Failed Stage: ${failedStage}
                         Error: ${failureDetails.take(500)}
+
+                        Trigger Type: ${env.JENKINS_TRIGGER_TYPE ?: 'Not available'}
+                        Jenkins User: ${env.JENKINS_TRIGGER_USER ?: 'Not available'}
+                        Trigger Cause: ${env.JENKINS_TRIGGER_CAUSE ?: 'Not available'}
+
+                        GitHub Pusher: ${env.GITHUB_PUSHER_LOGIN ?: 'Not available'}
+                        GitHub User ID: ${env.GITHUB_PUSHER_ID ?: 'Not available'}
 
                         Please check the Jenkins console output.
                         """
@@ -400,6 +482,14 @@ def call(Map config = [:]) {
                         Shipping CI build was aborted.
 
                         Service: ${env.SERVICE_NAME}
+                        Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
+
+                        Trigger Type: ${env.JENKINS_TRIGGER_TYPE ?: 'Not available'}
+                        Jenkins User: ${env.JENKINS_TRIGGER_USER ?: 'Not available'}
+                        Trigger Cause: ${env.JENKINS_TRIGGER_CAUSE ?: 'Not available'}
+
+                        GitHub Pusher: ${env.GITHUB_PUSHER_LOGIN ?: 'Not available'}
+                        GitHub User ID: ${env.GITHUB_PUSHER_ID ?: 'Not available'}
                         """
                     )
                 }
