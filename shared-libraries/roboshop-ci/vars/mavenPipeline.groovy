@@ -19,7 +19,9 @@ def call(Map config = [:]) {
 
     pipeline {
 
-        agent any
+        agent {
+            label'AGENT-1'
+        }
 
         options {
             timestamps()
@@ -56,7 +58,7 @@ def call(Map config = [:]) {
                     setupJavaMaven()
                 }
             }
-            
+
             stage('Initialize Pipeline') {
                 steps {
                     initializePipeline()
