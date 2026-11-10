@@ -378,6 +378,15 @@ def call(Map config = [:]) {
                     }
                 }
             }
+            post {
+                always {
+                    junit(
+                        testResults: '**/target/surefire-reports/TEST-*.xml',
+                        allowEmptyResults: true
+                    )
+                }
+            }
+        }
 
             // --------------------------------------------------
             // SonarQube Analysis

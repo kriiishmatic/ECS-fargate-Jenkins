@@ -1,16 +1,8 @@
 def call() {
 
-    echo '''
-    UNIT TESTS - NOT IMPLEMENTED
+    echo 'Executing Maven unit tests...'
 
-    Unit test execution is currently pending.
+    sh 'mvn -B test'
 
-    Planned implementation:
-    - Execute Maven test phase.
-    - Run JUnit and Mockito tests.
-    - Publish Surefire test reports.
-    - Fail the pipeline when tests fail.
-    '''
-
-    echo 'Skipping unit test execution for now.'
+    echo 'Maven unit tests completed successfully.'
 }
