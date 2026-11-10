@@ -15,52 +15,69 @@ def call(Map config = [:]) {
     // --------------------------------------------------
 
     def statusConfig = [
+
         'CI STARTED': [
-            color: '#36A3F7',
+            color: '#3498DB',
             emoji: ':rocket:',
-            title: 'Build started'
+            title: 'CI pipeline started',
+            subtitle: 'Build execution is now in progress.'
         ],
+
         'CI SUCCESS': [
-            color: '#2EB67D',
+            color: '#2ECC71',
             emoji: ':white_check_mark:',
-            title: 'Build completed successfully'
+            title: 'CI pipeline completed successfully',
+            subtitle: 'All configured stages passed.'
         ],
+
         'CI FAILED': [
-            color: '#E01E5A',
-            emoji: ':x:',
-            title: 'Build failed'
+            color: '#E74C3C',
+            emoji: ':rotating_light:',
+            title: 'CI pipeline failed',
+            subtitle: 'Immediate attention may be required.'
         ],
+
         'CI ABORTED': [
-            color: '#808080',
+            color: '#95A5A6',
             emoji: ':warning:',
-            title: 'Build aborted'
+            title: 'CI pipeline aborted',
+            subtitle: 'Build execution was interrupted.'
         ],
+
         'RELEASE STARTED': [
-            color: '#36A3F7',
+            color: '#3498DB',
             emoji: ':rocket:',
-            title: 'Release started'
+            title: 'Release started',
+            subtitle: 'Deployment process is in progress.'
         ],
+
         'RELEASE SUCCESS': [
-            color: '#2EB67D',
-            emoji: ':white_check_mark:',
-            title: 'Release completed successfully'
+            color: '#2ECC71',
+            emoji: ':tada:',
+            title: 'Release completed successfully',
+            subtitle: 'Application release completed.'
         ],
+
         'RELEASE FAILED': [
-            color: '#E01E5A',
-            emoji: ':x:',
-            title: 'Release failed'
+            color: '#E74C3C',
+            emoji: ':fire:',
+            title: 'Release failed',
+            subtitle: 'Deployment requires investigation.'
         ],
+
         'RELEASE ABORTED': [
-            color: '#808080',
+            color: '#95A5A6',
             emoji: ':warning:',
-            title: 'Release aborted'
+            title: 'Release aborted',
+            subtitle: 'Release execution was interrupted.'
         ]
     ]
 
     def style = statusConfig[status] ?: [
         color: '#808080',
         emoji: ':information_source:',
-        title: status
+        title: status,
+        subtitle: 'Pipeline notification.'
     ]
 
     // --------------------------------------------------
@@ -79,67 +96,114 @@ def call(Map config = [:]) {
     commit = commit.take(8)
 
     // --------------------------------------------------
-    // 3. Identify who triggered the Jenkins pipeline
+    // 3. Identify trigger and triggering user
     // --------------------------------------------------
 
-    def triggerName = 'Automated Trigger'
-    def triggerId = 'N/A'
-    def triggerSource = 'Unknown'
-
-    try {
-
-        def causes = currentBuild.getBuildCauses()
-
-        if (causes && !causes.isEmpty()) {
-
-            def userCause = causes.find {
-                it._class?.contains('UserIdCause')
-            }
-
-            if (userCause) {
-
-                triggerName = userCause.userName ?: 'Jenkins User'
-                triggerId = userCause.userId ?: 'N/A'
-                triggerSource = 'Manual / Jenkins UI'
-
-            } else {
-
-                def cause = causes[0]
-                def causeClass = cause._class ?: ''
-
-                triggerName = cause.shortDescription ?: 'Automated Trigger'
-
-                if (causeClass.contains('BranchEventCause') ||
-                    causeClass.contains('SCMTriggerCause')) {
-
-                    triggerSource = 'SCM / GitHub Webhook'
-
-                } else if (causeClass.contains('TimerTriggerCause')) {
-
-                    triggerSource = 'Scheduled Trigger'
-
-                } else if (causeClass.contains('UpstreamCause')) {
-
-                    triggerSource = 'Upstream Pipeline'
-
-                } else {
-
-                    triggerSource = 'Automated Trigger'
-                }
-            }
-        }
-
-    } catch (err) {
-
-        echo "WARNING: Could not identify pipeline trigger: ${err.getMessage()}"
-    }
-
-    // --------------------------------------------------
-    // 4. GitHub pusher metadata
-    // --------------------------------------------------
+    def triggerType = env.JENKINS_TRIGGER_TYPE ?: 'Automated Trigger'
+    def triggeredBy = ''
+    def userId = ''
+    def triggerSource = ''
 
     def githubPusher = env.GITHUB_PUSHER_LOGIN ?: ''
     def githubPusherId = env.GITHUB_PUSHER_ID ?: ''
+
+    def causes = []
+
+    try {
+        causes = currentBuild.getBuildCauses() ?: []
+    } catch (err) {
+        echo "WARNING: Could not retrieve Jenkins build causes: ${err.getMessage()}"
+    }
+
+    def userCause = causes.find {
+        (it['_class'] ?: '').contains('UserIdCause')
+    }
+
+    def causeDescription = causes
+        .collect { it['shortDescription'] }
+        .findAll { it }
+        .join('; ')
+
+    def causeClass = causes
+        .collect { it['_class'] ?: '' }
+        .join(' ')
+
+    // GitHub push takes priority when verified pusher metadata exists.
+
+    if (githubPusher) {
+
+        triggerType = 'GitHub Push'
+        triggeredBy = githubPusher
+        userId = githubPusherId
+        triggerSource = 'GitHub Webhook'
+
+    } else if (userCause) {
+
+        triggerType = 'Manual'
+        triggeredBy = userCause['userName'] ?:
+                      userCause['userId'] ?:
+                      'Jenkins User'
+
+        userId = userCause['userId'] ?: ''
+        triggerSource = 'Jenkins UI'
+
+    } else {
+
+        // Handle automated triggers.
+
+        if (causeClass.contains('BranchEventCause') ||
+            causeClass.contains('SCMTriggerCause')) {
+
+            triggerType = 'SCM Trigger'
+            triggerSource = 'GitHub / SCM Webhook'
+
+        } else if (causeClass.contains('TimerTriggerCause')) {
+
+            triggerType = 'Scheduled'
+            triggerSource = 'Jenkins Scheduler'
+
+        } else if (causeClass.contains('UpstreamCause')) {
+
+            triggerType = 'Upstream Pipeline'
+            triggerSource = 'Another Jenkins Pipeline'
+
+        } else {
+
+            triggerType = triggerType ?: 'Automated'
+            triggerSource = causeDescription ?: 'Automated Trigger'
+        }
+
+        triggeredBy = 'Automated process'
+    }
+
+    echo """
+    Slack notification identity:
+
+    Trigger Type : ${triggerType}
+    Triggered By : ${triggeredBy}
+    User ID      : ${userId ?: 'Not applicable'}
+    Source       : ${triggerSource}
+    """
+
+    // --------------------------------------------------
+    // 4. Remove duplicate metadata from message body
+    // --------------------------------------------------
+
+    // These details are displayed separately in Slack fields.
+
+    def duplicateMetadataPattern =
+        /(?i)^(service|version|branch|commit|trigger type|jenkins user|trigger cause|github pusher|github user id):.*/
+
+    def displayMessage = message.readLines()
+        .findAll { line ->
+            !(line.trim() ==~ duplicateMetadataPattern)
+        }
+        .join('\n')
+        .trim()
+
+    if (!displayMessage) {
+        displayMessage = style.subtitle
+    }
 
     // --------------------------------------------------
     // 5. Build Slack fields
@@ -149,62 +213,61 @@ def call(Map config = [:]) {
 
         [
             type: 'mrkdwn',
-            text: "*PROJECT*\n${project}"
+            text: ":file_folder: *PROJECT*\n${project}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*SERVICE*\n${service}"
+            text: ":package: *SERVICE*\n${service}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*BUILD*\n#${buildNumber}"
+            text: ":number_sign: *BUILD*\n#${buildNumber}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*VERSION*\n${version}"
+            text: ":label: *VERSION*\n${version}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*BRANCH*\n`${branch}`"
+            text: ":deciduous_tree: *BRANCH*\n`${branch}`"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*COMMIT*\n`${commit}`"
+            text: ":bookmark_tabs: *COMMIT*\n`${commit}`"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*TRIGGERED BY*\n${triggerName}"
+            text: ":zap: *TRIGGER TYPE*\n${triggerType}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*USER ID*\n`${triggerId}`"
+            text: ":bust_in_silhouette: *TRIGGERED BY*\n${triggeredBy}"
         ],
 
         [
             type: 'mrkdwn',
-            text: "*TRIGGER SOURCE*\n${triggerSource}"
+            text: ":satellite: *TRIGGER SOURCE*\n${triggerSource}"
         ]
     ]
 
-    // Add GitHub pusher details when metadata is available.
+    // Display the relevant user ID only when available.
 
-    if (githubPusher && githubPusherId) {
+    if (userId) {
+
+        def userIdLabel = githubPusher ?
+            'GITHUB USER ID' :
+            'JENKINS USER ID'
 
         fields.add([
             type: 'mrkdwn',
-            text: "*GITHUB PUSHER*\n${githubPusher}"
-        ])
-
-        fields.add([
-            type: 'mrkdwn',
-            text: "*GITHUB USER ID*\n`${githubPusherId}`"
+            text: ":id: *${userIdLabel}*\n`${userId}`"
         ])
     }
 
@@ -218,7 +281,7 @@ def call(Map config = [:]) {
             type: 'header',
             text: [
                 type: 'plain_text',
-                text: "${style.emoji} ${service.toUpperCase()} - ${status}",
+                text: "${style.emoji} ${service.toUpperCase()} | ${status}",
                 emoji: true
             ]
         ],
@@ -227,18 +290,24 @@ def call(Map config = [:]) {
             type: 'section',
             text: [
                 type: 'mrkdwn',
-                text: "*${style.title}*\n${message}"
+                text: "*${style.title}*\n${style.subtitle}\n\n${displayMessage}"
             ]
         ],
 
         [
             type: 'divider'
+        ],
+
+        [
+            type: 'section',
+            text: [
+                type: 'mrkdwn',
+                text: ":clipboard: *BUILD INFORMATION*"
+            ]
         ]
     ]
 
-    // IMPORTANT:
     // Slack allows a maximum of 10 fields per section block.
-    // Split the fields into groups of 10.
 
     fields.collate(10).each { fieldGroup ->
 
@@ -252,18 +321,22 @@ def call(Map config = [:]) {
         type: 'divider'
     ])
 
+    // --------------------------------------------------
+    // 7. Jenkins build context
+    // --------------------------------------------------
+
     blocks.add([
         type: 'context',
         elements: [
             [
                 type: 'mrkdwn',
-                text: "*Jenkins Job:* ${jobName}  |  *Build:* #${buildNumber}"
+                text: ":gear: *Jenkins:* ${jobName}  |  :bar_chart: *Build:* #${buildNumber}"
             ]
         ]
     ])
 
     // --------------------------------------------------
-    // 7. Add clickable Jenkins build button
+    // 8. Jenkins build button
     // --------------------------------------------------
 
     if (buildUrl) {
@@ -295,12 +368,12 @@ def call(Map config = [:]) {
     }
 
     // --------------------------------------------------
-    // 8. Construct Slack payload
+    // 9. Construct Slack payload
     // --------------------------------------------------
 
     def payload = [
 
-        text: "${status} - ${service} - Build #${buildNumber}",
+        text: "${style.emoji} ${status} - ${service} - Build #${buildNumber}",
 
         attachments: [
 
@@ -314,7 +387,7 @@ def call(Map config = [:]) {
     def jsonPayload = JsonOutput.toJson(payload)
 
     // --------------------------------------------------
-    // 9. Send Slack notification securely
+    // 10. Send Slack notification securely
     // --------------------------------------------------
 
     withCredentials([
@@ -355,7 +428,10 @@ def call(Map config = [:]) {
         }
 
         def responseBody = response.substring(0, markerIndex).trim()
-        def httpStatus = response.substring(markerIndex + statusMarker.length()).trim()
+
+        def httpStatus = response
+            .substring(markerIndex + statusMarker.length())
+            .trim()
 
         if (httpStatus != '200' || responseBody != 'ok') {
 
