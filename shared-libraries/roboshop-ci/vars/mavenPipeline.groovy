@@ -1,6 +1,7 @@
+
 def call(Map config = [:]) {
 
-    // Validate configuration before starting
+    // Validate mandatory configuration
     [
         'project',
         'service',
@@ -36,13 +37,11 @@ def call(Map config = [:]) {
             APP_BRANCH = "${config.appBranch}"
 
             POM_PATH = "${config.pomPath ?: 'pom.xml'}"
-            DOCKERFILE_PATH = "${config.dockerfile ?: 'Dockerfile'}"
 
             AWS_REGION = "${config.awsRegion}"
             ECR_REPOSITORY = "${config.ecrRepository}"
 
             AWS_CREDENTIAL_ID = "${awsCredentialId}"
-            NOTIFICATION_EMAIL = "${config.notificationEmail ?: ''}"
         }
 
         stages {
@@ -89,48 +88,9 @@ def call(Map config = [:]) {
                 }
             }
 
-            stage('Dependency Scan') {
-                steps {
-                    dependencyScan()
-                }
-            }
-
             stage('Package Application') {
                 steps {
                     packageApplication()
-                }
-            }
-
-            stage('Docker Build') {
-                steps {
-                    dockerBuild()
-                }
-            }
-
-            stage('Trivy Image Scan') {
-                steps {
-                    trivyScan()
-                }
-            }
-
-            stage('Push to ECR') {
-                steps {
-                    pushToECR()
-                }
-            }
-
-            stage('Generate Build Metadata') {
-                steps {
-                    generateBuildMetadata()
-                }
-            }
-
-        }
-
-        post {
-            always {
-                script {
-                    notifyPipeline()
                 }
             }
         }

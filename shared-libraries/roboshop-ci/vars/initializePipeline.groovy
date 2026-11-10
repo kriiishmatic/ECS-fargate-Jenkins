@@ -1,3 +1,4 @@
+
 def call() {
 
     echo 'Initializing CI pipeline context...'
@@ -17,6 +18,10 @@ def call() {
         returnStdout: true
     ).trim()
 
+    if (!env.BUILD_VERSION) {
+        error 'Unable to determine application version from pom.xml'
+    }
+
     env.IMAGE_TAG = "${env.BUILD_VERSION}-${env.BUILD_NUMBER}-${env.GIT_SHORT_COMMIT}"
 
     echo """
@@ -25,6 +30,7 @@ def call() {
     Service          : ${env.SERVICE_NAME}
     Build Number     : ${env.BUILD_NUMBER}
     Application Ver  : ${env.BUILD_VERSION}
+    Commit           : ${env.GIT_SHORT_COMMIT}
     Image Tag        : ${env.IMAGE_TAG}
     Build Timestamp  : ${env.BUILD_TIMESTAMP}
     """

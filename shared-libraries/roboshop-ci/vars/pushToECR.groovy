@@ -10,38 +10,38 @@ def call() {
             def accountId = sh(
                 script: '''
                     aws sts get-caller-identity \
-                    --query Account \
-                    --output text
+                    --query Account --output text
                 ''',
                 returnStdout: true
             ).trim()
 
-            def registry =
-                "${accountId}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
+            if (accountId != '392401698561') {
+                error "Unexpected AWS account: ${accountId}"
+            }
 
-            env.ECR_REGISTRY = registry
+            def registry =
+                '392401698561.dkr.ecr.us-east-1.amazonaws.com'
+
             env.ECR_IMAGE_URI =
                 "${registry}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
 
-            echo "AWS Account: ${accountId}"
-            echo "AWS Region: ${env.AWS_REGION}"
-            echo "ECR Image: ${env.ECR_IMAGE_URI}"
-
-            // Verify the existing repository; do not create a new one.
-            sh """
+            // Verify existing repository
+            sh '''
                 aws ecr describe-repositories \
-                  --repository-names "${env.ECR_REPOSITORY}" \
-                  --region "${env.AWS_REGION}"
-            """
+                  --repository-names project-k/shipping \
+                  --region us-east-1
+            '''
 
+            // Authenticate to ECR
             sh """
                 aws ecr get-login-password \
-                  --region "${env.AWS_REGION}" |
+                  --region us-east-1 |
                 docker login \
                   --username AWS \
                   --password-stdin ${registry}
             """
 
+            // Tag and push
             sh """
                 docker tag ${env.SERVICE_NAME}:${env.IMAGE_TAG} \
                   ${env.ECR_IMAGE_URI}
@@ -49,16 +49,7 @@ def call() {
                 docker push ${env.ECR_IMAGE_URI}
             """
 
-            env.ECR_IMAGE_DIGEST = sh(
-                script: """
-                    aws ecr describe-images \
-                      --repository-name "${env.ECR_REPOSITORY}" \
-                      --image-ids imageTag="${env.IMAGE_TAG}" \
-                      --query 'imageDetails[0].imageDigest' \
-                      --output text
-                """,
-                returnStdout: true
-            ).trim()
+            echo "Image pushed: ${env.ECR_IMAGE_URI}"
         }
     }
 }
