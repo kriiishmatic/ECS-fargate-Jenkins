@@ -1,17 +1,23 @@
-def call() {
 
-    echo """
-    PIPELINE NOTIFICATION - NOT IMPLEMENTED
+def call(Map config = [:]) {
 
-    Planned implementation:
-    - Identify final Jenkins build result.
-    - Identify failed stage and error details.
-    - Notify the responsible developer.
-    - Notify the DevOps distribution list.
-    - Include Jenkins build and console links.
+    def status = config.status ?: 'INFO'
+    def message = config.message ?: ''
 
-    Service : ${env.SERVICE_NAME}
-    Build   : ${env.BUILD_NUMBER}
-    Result  : ${currentBuild.currentResult}
-    """
+    try {
+
+        slackNotify(
+            status: status,
+            message: message
+        )
+
+    } catch (err) {
+
+        echo """
+        WARNING: Slack notification could not be delivered.
+
+        Status : ${status}
+        Error  : ${err.getMessage()}
+        """
+    }
 }

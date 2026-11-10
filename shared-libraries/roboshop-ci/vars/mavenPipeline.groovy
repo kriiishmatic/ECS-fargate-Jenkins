@@ -1,4 +1,18 @@
 
+def captureStageFailure(String stageName, Closure body) {
+
+    env.CURRENT_STAGE = stageName
+
+    try {
+        body.call()
+    } catch (err) {
+
+        env.FAILURE_MESSAGE = err.getMessage() ?: err.toString()
+
+        throw err
+    }
+}
+
 def call(Map config = [:]) {
 
     // Validate mandatory configuration
@@ -20,7 +34,7 @@ def call(Map config = [:]) {
     pipeline {
 
         agent {
-            label'AGENT-1'
+            label 'AGENT-1'
         }
 
         options {
@@ -48,53 +62,158 @@ def call(Map config = [:]) {
 
         stages {
 
-            stage('Checkout') {
+            stage('Notify Build Started') {
                 steps {
-                    checkoutCode()
+                    script {
+                        notifyPipeline(
+                            status: 'CI STARTED',
+                            message: """
+                            Shipping CI build has started.
+                            Service: ${env.SERVICE_NAME}
+                            Branch: ${env.BRANCH_NAME ?: env.APP_BRANCH}
+                            """
+                        )
+                    }
                 }
             }
+
+            stage('Checkout') {
+                steps {
+                    script {
+                        captureStageFailure('Checkout') {
+                            checkoutCode()
+                        }
+                    }
+                }
+            }
+
             stage('Setup Java and Maven') {
                 steps {
-                    setupJavaMaven()
+                    script {
+                        captureStageFailure('Setup Java and Maven') {
+                            setupJavaMaven()
+                        }
+                    }
                 }
             }
 
             stage('Initialize Pipeline') {
                 steps {
-                    initializePipeline()
+                    script {
+                        captureStageFailure('Initialize Pipeline') {
+                            initializePipeline()
+                        }
+                    }
                 }
             }
 
-            
-
             stage('Maven Clean and Compile') {
                 steps {
-                    mavenBuild()
+                    script {
+                        captureStageFailure('Maven Clean and Compile') {
+                            mavenBuild()
+                        }
+                    }
                 }
             }
 
             stage('Unit Tests') {
                 steps {
-                    unitTests()
+                    script {
+                        captureStageFailure('Unit Tests') {
+                            unitTests()
+                        }
+                    }
                 }
             }
 
             stage('SonarQube Analysis') {
                 steps {
-                    sonarqubeAnalysis()
+                    script {
+                        captureStageFailure('SonarQube Analysis') {
+                            sonarqubeAnalysis()
+                        }
+                    }
                 }
             }
 
             stage('Quality Gate') {
                 steps {
-                    qualityGate()
+                    script {
+                        captureStageFailure('Quality Gate') {
+                            qualityGate()
+                        }
+                    }
                 }
             }
 
             stage('Package Application') {
                 steps {
-                    packageApplication()
+                    script {
+                        captureStageFailure('Package Application') {
+                            packageApplication()
+                        }
+                    }
                 }
+            }
+        }
+
+        post {
+
+            success {
+                script {
+                    notifyPipeline(
+                        status: 'CI SUCCESS',
+                        message: """
+                        All Shipping CI stages completed successfully.
+
+                        Service: ${env.SERVICE_NAME}
+                        Version: ${env.BUILD_VERSION ?: 'N/A'}
+
+                        CI completed successfully. Ready for PR merge.
+                        """
+                    )
+                }
+            }
+
+            failure {
+                script {
+
+                    def failedStage = env.CURRENT_STAGE ?: 'Unknown'
+                    def failureDetails = env.FAILURE_MESSAGE ?:
+                        'No exception details captured. Check Jenkins console output.'
+
+                    notifyPipeline(
+                        status: 'CI FAILED',
+                        message: """
+                        Shipping CI build failed.
+
+                        Service: ${env.SERVICE_NAME}
+                        Failed Stage: ${failedStage}
+                        Error: ${failureDetails.take(500)}
+
+                        Please check the Jenkins console output.
+                        """
+                    )
+                }
+            }
+
+            aborted {
+                script {
+                    notifyPipeline(
+                        status: 'CI ABORTED',
+                        message: """
+                        Shipping CI build was aborted.
+
+                        Service: ${env.SERVICE_NAME}
+                        """
+                    )
+                }
+            }
+
+            cleanup {
+                echo 'Cleaning Jenkins workspace...'
+                cleanWs()
             }
         }
     }
