@@ -1,4 +1,3 @@
-
 import groovy.json.JsonSlurperClassic
 
 def captureStageFailure(String stageName, Closure body) {
@@ -8,16 +7,17 @@ def captureStageFailure(String stageName, Closure body) {
     try {
         body.call()
     } catch (err) {
-
         env.FAILURE_MESSAGE = err.getMessage() ?: err.toString()
-
         throw err
     }
 }
 
 def call(Map config = [:]) {
 
-    // Validate mandatory configuration
+    // --------------------------------------------------
+    // 1. Validate mandatory configuration
+    // --------------------------------------------------
+
     [
         'project',
         'service',
@@ -47,6 +47,10 @@ def call(Map config = [:]) {
             ))
         }
 
+        // --------------------------------------------------
+        // 2. Pipeline environment
+        // --------------------------------------------------
+
         environment {
             PROJECT = "${config.project}"
             SERVICE_NAME = "${config.service}"
@@ -63,12 +67,17 @@ def call(Map config = [:]) {
 
             GITHUB_METADATA_BUCKET = "${config.githubMetadataBucket ?: 'project-k-github-metadata'}"
             GITHUB_REPOSITORY = "${config.githubRepository ?: 'kriiishmatic/roboshop-shipping-ci'}"
-
-            GITHUB_PUSHER_LOGIN = ''
-            GITHUB_PUSHER_ID = ''
         }
 
+        // --------------------------------------------------
+        // 3. Pipeline stages
+        // --------------------------------------------------
+
         stages {
+
+            // --------------------------------------------------
+            // Notify Build Started
+            // --------------------------------------------------
 
             stage('Notify Build Started') {
                 steps {
@@ -85,6 +94,10 @@ def call(Map config = [:]) {
                 }
             }
 
+            // --------------------------------------------------
+            // Checkout
+            // --------------------------------------------------
+
             stage('Checkout') {
                 steps {
                     script {
@@ -94,6 +107,10 @@ def call(Map config = [:]) {
                     }
                 }
             }
+
+            // --------------------------------------------------
+            // Capture GitHub Push Metadata
+            // --------------------------------------------------
 
             stage('Capture GitHub Push Metadata') {
                 steps {
@@ -113,6 +130,7 @@ def call(Map config = [:]) {
 
                         // Retry briefly because the metadata receiver and
                         // multibranch pipeline can start at nearly the same time.
+
                         for (int attempt = 1; attempt <= 6; attempt++) {
 
                             try {
@@ -136,6 +154,7 @@ def call(Map config = [:]) {
                                     .parseText(metadataJson)
 
                                 // Explicit map-key access for JSON fields.
+
                                 def metadataCommit = metadata['commit_sha']?.toString()?.trim()
                                 def metadataRepository = metadata['repository']?.toString()?.trim()
                                 def metadataEvent = metadata['event']?.toString()?.trim()
@@ -147,6 +166,7 @@ def call(Map config = [:]) {
                                 echo "Pusher ID extracted: ${pusherId}"
 
                                 // Validate metadata before accepting it.
+
                                 def validCommit =
                                     metadataCommit &&
                                     metadataCommit.equalsIgnoreCase(commitSha)
@@ -173,10 +193,11 @@ def call(Map config = [:]) {
                                     validPusherId
                                 ) {
 
-                                    env.GITHUB_PUSHER_LOGIN = pusherLogin
-                                    env.GITHUB_PUSHER_ID = pusherId
-                                    echo "Verified GitHub pusher: ${env.GITHUB_PUSHER_LOGIN}"
-                                    echo "Verified GitHub pusher ID: ${env.GITHUB_PUSHER_ID}"
+                                    // Store the values for later pipeline stages
+                                    // and post-build Slack notifications.
+
+                                    env.GITHUB_PUSHER_LOGIN = pusherLogin.toString()
+                                    env.GITHUB_PUSHER_ID = pusherId.toString()
 
                                     metadataFound = true
 
@@ -227,6 +248,10 @@ def call(Map config = [:]) {
                 }
             }
 
+            // --------------------------------------------------
+            // Setup Java and Maven
+            // --------------------------------------------------
+
             stage('Setup Java and Maven') {
                 steps {
                     script {
@@ -236,6 +261,10 @@ def call(Map config = [:]) {
                     }
                 }
             }
+
+            // --------------------------------------------------
+            // Initialize Pipeline
+            // --------------------------------------------------
 
             stage('Initialize Pipeline') {
                 steps {
@@ -247,6 +276,10 @@ def call(Map config = [:]) {
                 }
             }
 
+            // --------------------------------------------------
+            // Maven Clean and Compile
+            // --------------------------------------------------
+
             stage('Maven Clean and Compile') {
                 steps {
                     script {
@@ -256,6 +289,10 @@ def call(Map config = [:]) {
                     }
                 }
             }
+
+            // --------------------------------------------------
+            // Unit Tests
+            // --------------------------------------------------
 
             stage('Unit Tests') {
                 steps {
@@ -267,6 +304,10 @@ def call(Map config = [:]) {
                 }
             }
 
+            // --------------------------------------------------
+            // SonarQube Analysis
+            // --------------------------------------------------
+
             stage('SonarQube Analysis') {
                 steps {
                     script {
@@ -276,6 +317,10 @@ def call(Map config = [:]) {
                     }
                 }
             }
+
+            // --------------------------------------------------
+            // Quality Gate
+            // --------------------------------------------------
 
             stage('Quality Gate') {
                 steps {
@@ -287,6 +332,10 @@ def call(Map config = [:]) {
                 }
             }
 
+            // --------------------------------------------------
+            // Package Application
+            // --------------------------------------------------
+
             stage('Package Application') {
                 steps {
                     script {
@@ -297,6 +346,10 @@ def call(Map config = [:]) {
                 }
             }
         }
+
+        // --------------------------------------------------
+        // 4. Post-build actions and notifications
+        // --------------------------------------------------
 
         post {
 
@@ -320,6 +373,7 @@ def call(Map config = [:]) {
                 script {
 
                     def failedStage = env.CURRENT_STAGE ?: 'Unknown'
+
                     def failureDetails = env.FAILURE_MESSAGE ?:
                         'No exception details captured. Check Jenkins console output.'
 
