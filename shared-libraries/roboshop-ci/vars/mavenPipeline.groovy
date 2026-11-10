@@ -1,4 +1,6 @@
 
+import groovy.json.JsonSlurperClassic
+
 def captureStageFailure(String stageName, Closure body) {
 
     env.CURRENT_STAGE = stageName
@@ -58,6 +60,12 @@ def call(Map config = [:]) {
             ECR_REPOSITORY = "${config.ecrRepository}"
 
             AWS_CREDENTIAL_ID = "${awsCredentialId}"
+
+            GITHUB_METADATA_BUCKET = "${config.githubMetadataBucket ?: 'project-k-github-metadata'}"
+            GITHUB_REPOSITORY = "${config.githubRepository ?: 'kriiishmatic/roboshop-shipping-ci'}"
+
+            GITHUB_PUSHER_LOGIN = ''
+            GITHUB_PUSHER_ID = ''
         }
 
         stages {
@@ -82,6 +90,97 @@ def call(Map config = [:]) {
                     script {
                         captureStageFailure('Checkout') {
                             checkoutCode()
+                        }
+                    }
+                }
+            }
+
+            stage('Capture GitHub Push Metadata') {
+                steps {
+                    script {
+
+                        def commitSha = sh(
+                            script: 'git rev-parse HEAD',
+                            returnStdout: true
+                        ).trim()
+
+                        env.GIT_COMMIT = commitSha
+                        env.GIT_SHORT_COMMIT = commitSha.take(8)
+
+                        echo "Checking GitHub push metadata for commit: ${commitSha}"
+
+                        def metadataFound = false
+
+                        // Retry briefly because the metadata receiver and
+                        // multibranch pipeline can start at nearly the same time.
+                        for (int attempt = 1; attempt <= 6; attempt++) {
+
+                            try {
+
+                                def metadataJson = sh(
+                                    script: """
+                                        aws s3 cp \
+                                        s3://${env.GITHUB_METADATA_BUCKET}/shipping/${commitSha}.json \
+                                        - \
+                                        --region ${env.AWS_REGION} \
+                                        2>/dev/null
+                                    """,
+                                    returnStdout: true
+                                ).trim()
+
+                                def metadata = new JsonSlurperClassic()
+                                    .parseText(metadataJson)
+
+                                def validCommit = metadata.commit_sha?.toString()
+                                    ?.equalsIgnoreCase(commitSha)
+
+                                def validRepository = metadata.repository?.toString()
+                                    ?.equalsIgnoreCase(env.GITHUB_REPOSITORY)
+
+                                def validEvent = metadata.event?.toString() == 'push'
+
+                                if (validCommit && validRepository && validEvent &&
+                                    metadata.pusher_login && metadata.pusher_id) {
+
+                                    env.GITHUB_PUSHER_LOGIN =
+                                        metadata.pusher_login.toString()
+
+                                    env.GITHUB_PUSHER_ID =
+                                        metadata.pusher_id.toString()
+
+                                    metadataFound = true
+
+                                    echo """
+                                    GitHub push metadata retrieved successfully.
+                                    Repository : ${metadata.repository}
+                                    Commit     : ${commitSha}
+                                    Pusher     : ${env.GITHUB_PUSHER_LOGIN}
+                                    Pusher ID  : ${env.GITHUB_PUSHER_ID}
+                                    """
+
+                                    break
+
+                                } else {
+
+                                    echo 'GitHub metadata was found but did not pass validation.'
+                                    break
+                                }
+
+                            } catch (err) {
+
+                                echo "Metadata lookup attempt ${attempt}/6 failed."
+
+                                if (attempt < 6) {
+                                    sleep(time: 5, unit: 'SECONDS')
+                                }
+                            }
+                        }
+
+                        if (!metadataFound) {
+                            echo """
+                            WARNING: GitHub push metadata was not available.
+                            Continuing CI with the normal Jenkins trigger information.
+                            """
                         }
                     }
                 }

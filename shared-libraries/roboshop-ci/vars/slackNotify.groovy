@@ -1,3 +1,4 @@
+
 import groovy.json.JsonOutput
 
 def call(Map config = [:]) {
@@ -78,7 +79,7 @@ def call(Map config = [:]) {
     commit = commit.take(8)
 
     // --------------------------------------------------
-    // 3. Identify who triggered the pipeline
+    // 3. Identify who triggered the Jenkins pipeline
     // --------------------------------------------------
 
     def triggerName = 'Automated Trigger'
@@ -135,8 +136,78 @@ def call(Map config = [:]) {
     }
 
     // --------------------------------------------------
-    // 4. Build Slack Block Kit layout
+    // 4. GitHub pusher metadata
     // --------------------------------------------------
+
+    def githubPusher = env.GITHUB_PUSHER_LOGIN ?: ''
+    def githubPusherId = env.GITHUB_PUSHER_ID ?: ''
+
+    // --------------------------------------------------
+    // 5. Build Slack Block Kit fields
+    // --------------------------------------------------
+
+    def fields = [
+
+        [
+            type: 'mrkdwn',
+            text: "*PROJECT*\n${project}"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*SERVICE*\n${service}"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*BUILD*\n#${buildNumber}"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*VERSION*\n${version}"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*BRANCH*\n`${branch}`"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*COMMIT*\n`${commit}`"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*TRIGGERED BY*\n${triggerName}"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*USER ID*\n`${triggerId}`"
+        ],
+
+        [
+            type: 'mrkdwn',
+            text: "*TRIGGER SOURCE*\n${triggerSource}"
+        ]
+    ]
+
+    // Add GitHub pusher details when metadata is available.
+
+    if (githubPusher && githubPusherId) {
+
+        fields.add([
+            type: 'mrkdwn',
+            text: "*GITHUB PUSHER*\n${githubPusher}"
+        ])
+
+        fields.add([
+            type: 'mrkdwn',
+            text: "*GITHUB USER ID*\n`${githubPusherId}`"
+        ])
+    }
 
     def blocks = [
 
@@ -163,53 +234,7 @@ def call(Map config = [:]) {
 
         [
             type: 'section',
-            fields: [
-
-                [
-                    type: 'mrkdwn',
-                    text: "*PROJECT*\n${project}"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*SERVICE*\n${service}"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*BUILD*\n#${buildNumber}"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*VERSION*\n${version}"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*BRANCH*\n`${branch}`"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*COMMIT*\n`${commit}`"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*TRIGGERED BY*\n${triggerName}"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*USER ID*\n`${triggerId}`"
-                ],
-
-                [
-                    type: 'mrkdwn',
-                    text: "*TRIGGER SOURCE*\n${triggerSource}"
-                ]
-            ]
+            fields: fields
         ],
 
         [
@@ -228,7 +253,7 @@ def call(Map config = [:]) {
     ]
 
     // --------------------------------------------------
-    // 5. Add clickable Jenkins build button
+    // 6. Add clickable Jenkins build button
     // --------------------------------------------------
 
     if (buildUrl) {
@@ -260,7 +285,7 @@ def call(Map config = [:]) {
     }
 
     // --------------------------------------------------
-    // 6. Construct Slack payload
+    // 7. Construct Slack payload
     // --------------------------------------------------
 
     def payload = [
@@ -279,7 +304,7 @@ def call(Map config = [:]) {
     def jsonPayload = JsonOutput.toJson(payload)
 
     // --------------------------------------------------
-    // 7. Send Slack notification securely
+    // 8. Send Slack notification securely
     // --------------------------------------------------
 
     withCredentials([
