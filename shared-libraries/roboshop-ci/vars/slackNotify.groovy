@@ -107,8 +107,7 @@ def call(Map config = [:]) {
                 def cause = causes[0]
                 def causeClass = cause._class ?: ''
 
-                triggerName = cause.shortDescription ?:
-                    'Automated Trigger'
+                triggerName = cause.shortDescription ?: 'Automated Trigger'
 
                 if (causeClass.contains('BranchEventCause') ||
                     causeClass.contains('SCMTriggerCause')) {
@@ -143,7 +142,7 @@ def call(Map config = [:]) {
     def githubPusherId = env.GITHUB_PUSHER_ID ?: ''
 
     // --------------------------------------------------
-    // 5. Build Slack Block Kit fields
+    // 5. Build Slack fields
     // --------------------------------------------------
 
     def fields = [
@@ -209,6 +208,10 @@ def call(Map config = [:]) {
         ])
     }
 
+    // --------------------------------------------------
+    // 6. Construct Slack blocks
+    // --------------------------------------------------
+
     def blocks = [
 
         [
@@ -230,30 +233,37 @@ def call(Map config = [:]) {
 
         [
             type: 'divider'
-        ],
-
-        [
-            type: 'section',
-            fields: fields
-        ],
-
-        [
-            type: 'divider'
-        ],
-
-        [
-            type: 'context',
-            elements: [
-                [
-                    type: 'mrkdwn',
-                    text: "*Jenkins Job:* ${jobName}  |  *Build:* #${buildNumber}"
-                ]
-            ]
         ]
     ]
 
+    // IMPORTANT:
+    // Slack allows a maximum of 10 fields per section block.
+    // Split the fields into groups of 10.
+
+    fields.collate(10).each { fieldGroup ->
+
+        blocks.add([
+            type: 'section',
+            fields: fieldGroup
+        ])
+    }
+
+    blocks.add([
+        type: 'divider'
+    ])
+
+    blocks.add([
+        type: 'context',
+        elements: [
+            [
+                type: 'mrkdwn',
+                text: "*Jenkins Job:* ${jobName}  |  *Build:* #${buildNumber}"
+            ]
+        ]
+    ])
+
     // --------------------------------------------------
-    // 6. Add clickable Jenkins build button
+    // 7. Add clickable Jenkins build button
     // --------------------------------------------------
 
     if (buildUrl) {
@@ -285,7 +295,7 @@ def call(Map config = [:]) {
     }
 
     // --------------------------------------------------
-    // 7. Construct Slack payload
+    // 8. Construct Slack payload
     // --------------------------------------------------
 
     def payload = [
@@ -304,7 +314,7 @@ def call(Map config = [:]) {
     def jsonPayload = JsonOutput.toJson(payload)
 
     // --------------------------------------------------
-    // 8. Send Slack notification securely
+    // 9. Send Slack notification securely
     // --------------------------------------------------
 
     withCredentials([
@@ -326,7 +336,8 @@ def call(Map config = [:]) {
             script: '''
                 set +x
 
-                curl --silent --show-error --fail \
+                curl --silent --show-error \
+                    --write-out '\\nHTTP_STATUS:%{http_code}' \
                     --header "Content-Type: application/json" \
                     --data-binary @slack-payload.json \
                     "$SLACK_WEBHOOK"
@@ -336,8 +347,24 @@ def call(Map config = [:]) {
 
         ).trim()
 
-        if (response != 'ok') {
-            error "Slack notification failed: ${response}"
+        def statusMarker = 'HTTP_STATUS:'
+        def markerIndex = response.lastIndexOf(statusMarker)
+
+        if (markerIndex < 0) {
+            error "Slack notification failed. No HTTP status received. Response: ${response}"
+        }
+
+        def responseBody = response.substring(0, markerIndex).trim()
+        def httpStatus = response.substring(markerIndex + statusMarker.length()).trim()
+
+        if (httpStatus != '200' || responseBody != 'ok') {
+
+            error """
+            Slack notification failed.
+
+            HTTP Status : ${httpStatus}
+            Response    : ${responseBody}
+            """
         }
 
         echo "Slack notification sent successfully: ${status}"
