@@ -128,31 +128,60 @@ def call(Map config = [:]) {
                                     returnStdout: true
                                 ).trim()
 
+                                if (!metadataJson) {
+                                    throw new Exception('S3 returned empty metadata.')
+                                }
+
                                 def metadata = new JsonSlurperClassic()
                                     .parseText(metadataJson)
 
-                                def validCommit = metadata.commit_sha?.toString()
-                                    ?.equalsIgnoreCase(commitSha)
+                                // Explicit map-key access for JSON fields.
+                                def metadataCommit = metadata['commit_sha']?.toString()?.trim()
+                                def metadataRepository = metadata['repository']?.toString()?.trim()
+                                def metadataEvent = metadata['event']?.toString()?.trim()
+                                def pusherLogin = metadata['pusher_login']?.toString()?.trim()
+                                def pusherId = metadata['pusher_id']?.toString()?.trim()
 
-                                def validRepository = metadata.repository?.toString()
-                                    ?.equalsIgnoreCase(env.GITHUB_REPOSITORY)
+                                echo "Metadata keys: ${metadata.keySet()}"
+                                echo "Pusher login extracted: ${pusherLogin}"
+                                echo "Pusher ID extracted: ${pusherId}"
 
-                                def validEvent = metadata.event?.toString() == 'push'
+                                // Validate metadata before accepting it.
+                                def validCommit =
+                                    metadataCommit &&
+                                    metadataCommit.equalsIgnoreCase(commitSha)
 
-                                if (validCommit && validRepository && validEvent &&
-                                    metadata.pusher_login && metadata.pusher_id) {
+                                def validRepository =
+                                    metadataRepository &&
+                                    metadataRepository.equalsIgnoreCase(env.GITHUB_REPOSITORY)
 
-                                    env.GITHUB_PUSHER_LOGIN =
-                                        metadata.pusher_login.toString()
+                                def validEvent = metadataEvent == 'push'
 
-                                    env.GITHUB_PUSHER_ID =
-                                        metadata.pusher_id.toString()
+                                def validPusherLogin =
+                                    pusherLogin &&
+                                    !pusherLogin.equalsIgnoreCase('null')
+
+                                def validPusherId =
+                                    pusherId &&
+                                    !pusherId.equalsIgnoreCase('null')
+
+                                if (
+                                    validCommit &&
+                                    validRepository &&
+                                    validEvent &&
+                                    validPusherLogin &&
+                                    validPusherId
+                                ) {
+
+                                    env.GITHUB_PUSHER_LOGIN = pusherLogin
+                                    env.GITHUB_PUSHER_ID = pusherId
 
                                     metadataFound = true
 
                                     echo """
                                     GitHub push metadata retrieved successfully.
-                                    Repository : ${metadata.repository}
+
+                                    Repository : ${metadataRepository}
                                     Commit     : ${commitSha}
                                     Pusher     : ${env.GITHUB_PUSHER_LOGIN}
                                     Pusher ID  : ${env.GITHUB_PUSHER_ID}
@@ -162,13 +191,22 @@ def call(Map config = [:]) {
 
                                 } else {
 
-                                    echo 'GitHub metadata was found but did not pass validation.'
+                                    echo """
+                                    GitHub metadata validation failed.
+
+                                    Commit valid     : ${validCommit}
+                                    Repository valid : ${validRepository}
+                                    Event valid      : ${validEvent}
+                                    Pusher valid     : ${validPusherLogin}
+                                    Pusher ID valid  : ${validPusherId}
+                                    """
+
                                     break
                                 }
 
                             } catch (err) {
 
-                                echo "Metadata lookup attempt ${attempt}/6 failed."
+                                echo "Metadata lookup attempt ${attempt}/6 failed: ${err.getMessage()}"
 
                                 if (attempt < 6) {
                                     sleep(time: 5, unit: 'SECONDS')
@@ -179,6 +217,7 @@ def call(Map config = [:]) {
                         if (!metadataFound) {
                             echo """
                             WARNING: GitHub push metadata was not available.
+
                             Continuing CI with the normal Jenkins trigger information.
                             """
                         }
