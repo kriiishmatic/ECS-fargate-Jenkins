@@ -1,8 +1,6 @@
-
 import groovy.json.JsonSlurperClassic
 
 def captureStageFailure(String stageName, Closure body) {
-
     env.CURRENT_STAGE = stageName
 
     try {
@@ -343,22 +341,10 @@ def call(Map config = [:]) {
             // Maven Clean and Compile
             // --------------------------------------------------
 
-            // stage('Maven Clean and Compile') {
-            //     steps {
-            //         script {
-            //             captureStageFailure('Maven Clean and Compile') {
-            //                 mavenBuild()
-            //             }
-            //         }
-            //     }
-            // }
             stage('Maven Clean and Compile') {
                 steps {
                     script {
                         captureStageFailure('Maven Clean and Compile') {
-
-                            error('INTENTIONAL FAILURE TEST - Testing CI error handling')
-
                             mavenBuild()
                         }
                     }
@@ -377,16 +363,15 @@ def call(Map config = [:]) {
                         }
                     }
                 }
-            }
-            post {
-                always {
-                    junit(
-                        testResults: '**/target/surefire-reports/TEST-*.xml',
-                        allowEmptyResults: true
-                    )
+                post {
+                    always {
+                        junit(
+                            testResults: '**/target/surefire-reports/TEST-*.xml',
+                            allowEmptyResults: true
+                        )
+                    }
                 }
             }
-        }
 
             // --------------------------------------------------
             // SonarQube Analysis
