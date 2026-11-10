@@ -343,10 +343,22 @@ def call(Map config = [:]) {
             // Maven Clean and Compile
             // --------------------------------------------------
 
+            // stage('Maven Clean and Compile') {
+            //     steps {
+            //         script {
+            //             captureStageFailure('Maven Clean and Compile') {
+            //                 mavenBuild()
+            //             }
+            //         }
+            //     }
+            // }
             stage('Maven Clean and Compile') {
                 steps {
                     script {
                         captureStageFailure('Maven Clean and Compile') {
+
+                            error('INTENTIONAL FAILURE TEST - Testing CI error handling')
+
                             mavenBuild()
                         }
                     }
