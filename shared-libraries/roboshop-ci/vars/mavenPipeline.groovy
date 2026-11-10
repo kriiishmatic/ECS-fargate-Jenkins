@@ -175,6 +175,8 @@ def call(Map config = [:]) {
 
                                     env.GITHUB_PUSHER_LOGIN = pusherLogin
                                     env.GITHUB_PUSHER_ID = pusherId
+                                    echo "Verified GitHub pusher: ${env.GITHUB_PUSHER_LOGIN}"
+                                    echo "Verified GitHub pusher ID: ${env.GITHUB_PUSHER_ID}"
 
                                     metadataFound = true
 
