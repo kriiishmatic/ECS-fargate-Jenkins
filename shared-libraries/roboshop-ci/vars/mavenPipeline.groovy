@@ -51,18 +51,19 @@ def call(Map config = [:]) {
                     checkoutCode()
                 }
             }
-
+            stage('Setup Java and Maven') {
+                steps {
+                    setupJavaMaven()
+                }
+            }
+            
             stage('Initialize Pipeline') {
                 steps {
                     initializePipeline()
                 }
             }
 
-            stage('Setup Java and Maven') {
-                steps {
-                    setupJavaMaven()
-                }
-            }
+            
 
             stage('Maven Clean and Compile') {
                 steps {
